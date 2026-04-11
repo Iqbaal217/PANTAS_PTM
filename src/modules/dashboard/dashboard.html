@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PANTAS — Dashboard</title>
+  <link rel="stylesheet" href="../../../style.css" />
+</head>
+<body>
+  <div class="dashboard">
+    <header class="dashboard-header">
+      <div class="header-left">
+        <h1 class="app-title">PANTAS</h1>
+        <span id="user-name" class="user-name"></span>
+      </div>
+      <div class="header-right">
+        <span id="connection-status" class="connection-status disconnected">Terputus</span>
+        <button id="logout-btn" class="btn btn-secondary">Keluar</button>
+      </div>
+    </header>
+
+    <main class="dashboard-main">
+      <!-- Kartu Ringkasan Kesehatan -->
+      <section class="health-cards">
+        <div class="card card-heart-rate">
+          <h2 class="card-title">Detak Jantung</h2>
+          <div class="card-value">
+            <span id="bpm-value" class="metric-value">--</span>
+            <span class="metric-unit">BPM</span>
+          </div>
+        </div>
+
+        <div class="card card-blood-pressure">
+          <h2 class="card-title">Tekanan Darah</h2>
+          <div class="card-value">
+            <span id="bp-value" class="metric-value">--/--</span>
+            <span class="metric-unit">mmHg</span>
+          </div>
+        </div>
+
+        <div class="card card-risk">
+          <h2 class="card-title">Status Risiko PTM</h2>
+          <div class="card-value">
+            <span id="risk-level" class="risk-badge risk-low">Rendah</span>
+          </div>
+        </div>
+
+        <div class="card card-camera">
+          <h2 class="card-title">Deteksi Kalori</h2>
+          <button id="camera-btn" class="btn btn-primary">Buka Kamera</button>
+        </div>
+      </section>
+
+      <!-- Panel Detail Risiko -->
+      <section id="risk-detail-panel" class="risk-detail-panel" style="display:none;">
+        <h2 class="panel-title">Detail Analisis Risiko</h2>
+        <p id="risk-description" class="risk-description"></p>
+        <ul id="risk-recommendations" class="risk-recommendations"></ul>
+        <button id="close-risk-detail" class="btn btn-secondary">Tutup</button>
+      </section>
+
+      <!-- Grafik Tren -->
+      <section class="charts-section">
+        <h2 class="section-title">Grafik Tren Kesehatan</h2>
+        <div class="chart-container">
+          <h3>Detak Jantung (24 Jam Terakhir)</h3>
+          <div id="hr-chart-container" class="chart"></div>
+        </div>
+        <div class="chart-container">
+          <h3>Tekanan Darah (7 Hari Terakhir)</h3>
+          <div id="bp-chart-container" class="chart"></div>
+        </div>
+      </section>
+
+      <!-- Navigasi -->
+      <nav class="dashboard-nav">
+        <a href="#/history" class="nav-link">Riwayat</a>
+        <a href="#/reminder" class="nav-link">Pengingat Obat</a>
+        <a href="#/consultation" class="nav-link">Konsultasi Dokter</a>
+      </nav>
+    </main>
+  </div>
+
+  <script type="module" src="../../app.js"></script>
+</body>
+</html>
