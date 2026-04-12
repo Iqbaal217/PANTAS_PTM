@@ -254,12 +254,17 @@ let _currentHash = null;
 
 function handleRouteIfChanged() {
   const hash = window.location.hash || '';
-  if (hash === _currentHash) return; // hash tidak berubah, skip re-render
+  // Selalu jalankan guard untuk protected routes, skip hanya untuk halaman yang sama non-protected
+  const protectedRoutes = ['#/dashboard', '#/history', '#/reminders', '#/consultation'];
+  if (hash === _currentHash && !protectedRoutes.includes(hash)) return;
   _currentHash = hash;
   handleRoute();
 }
 
-document.addEventListener('DOMContentLoaded', handleRoute);
+document.addEventListener('DOMContentLoaded', () => {
+  _currentHash = null; // reset saat halaman pertama kali load
+  handleRoute();
+});
 window.addEventListener('hashchange', handleRouteIfChanged);
 
 // Re-handle on resize (mobile ↔ desktop switch)

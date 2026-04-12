@@ -124,8 +124,8 @@ export function saveSession(token) {
  * @returns {string|null}
  */
 export function getSession() {
-  const token  = localStorage.getItem(SESSION_KEY);
-  if (!token) return null;
+  const token = localStorage.getItem(SESSION_KEY);
+  if (!token || !token.startsWith('pantas-auth-')) return null;
   const tokens = JSON.parse(localStorage.getItem(TOKENS_KEY) || '[]');
   return tokens.includes(token) ? token : null;
 }
@@ -183,7 +183,7 @@ export async function login(email, password) {
     return { success: false, error: 'Password salah. Silakan coba lagi.' };
   }
 
-  const token = `token-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const token = `pantas-auth-${Date.now()}-${Math.random().toString(36).slice(2)}`;
   saveSession(token);
   return { success: true, token };
 }
