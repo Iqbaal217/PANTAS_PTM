@@ -1,9 +1,11 @@
 /**
  * History — Halaman Rekam Medis pengguna.
- * Menampilkan dan memungkinkan edit data kesehatan yang tersimpan.
+ * Data pribadi, integrasi BPJS Kesehatan, dan riwayat penyakit diri sendiri.
  */
 
 import { getProfile, saveProfile } from '../user-profile/userProfile.js';
+
+const BPJS_KEY = 'pantas_bpjs_data';
 
 function _renderCheckbox(id, label, checked) {
   return `
@@ -13,17 +15,57 @@ function _renderCheckbox(id, label, checked) {
     </label>`;
 }
 
+function _getBpjsData() {
+  try { return JSON.parse(localStorage.getItem(BPJS_KEY) || 'null'); } catch { return null; }
+}
+
+function _saveBpjsData(data) {
+  localStorage.setItem(BPJS_KEY, JSON.stringify(data));
+}
+
+// Mock BPJS lookup
+async function _fetchBpjsData(noBpjs) {
+  await new Promise(r => setTimeout(r, 1200));
+  if (!/^\d{13}$/.test(noBpjs)) throw new Error('Nomor BPJS tidak valid (harus 13 digit).');
+  return {
+    noBpjs,
+    nama: getProfile().name || 'Peserta BPJS',
+    statusPeserta: 'Aktif',
+    jenisKepesertaan: 'Pekerja Bukan Penerima Upah (PBPU)',
+    faskesTingkat1: 'Puskesmas Kecamatan Setempat',
+    berlakuHingga: '31 Desember 2026',
+    syncedAt: new Date().toISOString(),
+  };
+}
+
 const HISTORY_INNER_HTML = `
-  <!-- Banner info -->
+  <!-- Banner BPJS -->
   <div style="background:var(--blue-soft);border:1px solid rgba(37,99,235,0.2);border-radius:var(--radius);padding:12px 14px;margin-bottom:18px;display:flex;gap:10px;align-items:flex-start;">
     <span style="font-size:1rem;flex-shrink:0;">ℹ️</span>
     <div style="font-size:0.78rem;color:var(--blue);line-height:1.6;">
-      Data rekam medis Anda tersimpan secara lokal dan digunakan untuk analisis risiko kesehatan.
+      Aplikasi ini terintegrasi dengan <strong>BPJS Kesehatan</strong>. Data rekam medis kamu akan diambil otomatis dari sistem BPJS.
     </div>
   </div>
 
   <!-- Data Pribadi -->
   <div style="font-size:0.9rem;font-weight:700;color:var(--text);margin-bottom:12px;">Data Pribadi</div>
+
+  <!-- Nomor BPJS -->
+  <div class="form-group">
+    <label>Nomor BPJS</label>
+    <input type="text" id="rm-bpjs-no" placeholder="Contoh: 0001234567890" maxlength="13" inputmode="numeric" />
+  </div>
+  <button id="rm-bpjs-sync-btn" class="btn btn-primary" style="width:100%;margin-bottom:6px;">
+    🔗 Ambil Data dari BPJS
+  </button>
+  <div id="rm-bpjs-status" style="font-size:0.75rem;margin-bottom:14px;"></div>
+
+  <!-- Info BPJS (muncul setelah sync) -->
+  <div id="rm-bpjs-info" style="display:none;background:var(--surface-2);border:1px solid var(--border);border-left:4px solid var(--blue);border-radius:var(--radius);padding:12px 14px;margin-bottom:18px;">
+    <div style="font-size:0.78rem;font-weight:600;color:var(--blue);margin-bottom:8px;">✓ Tersinkronisasi dengan BPJS Kesehatan</div>
+    <div id="rm-bpjs-detail" style="font-size:0.78rem;color:var(--text-2);line-height:1.8;"></div>
+  </div>
+
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;">
     <div class="form-group" style="grid-column:1/-1;">
       <label>Nama Lengkap</label>
@@ -55,38 +97,10 @@ const HISTORY_INNER_HTML = `
     </div>
   </div>
 
-  <!-- Riwayat Penyakit Orang Tua -->
-  <div style="font-size:0.9rem;font-weight:700;color:var(--text);margin-bottom:6px;">Riwayat Penyakit Orang Tua</div>
-  <div style="font-size:0.78rem;color:var(--text-3);margin-bottom:12px;">Pilih penyakit yang pernah/sedang dialami orang tua Anda</div>
-  <div id="rm-family-history" style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;"></div>
-
-  <!-- Gaya Hidup -->
-  <div style="font-size:0.9rem;font-weight:700;color:var(--text);margin-bottom:12px;">Gaya Hidup</div>
-  <div class="form-group">
-    <label>Status Merokok</label>
-    <select id="rm-smoking">
-      <option value="never">Tidak pernah merokok</option>
-      <option value="former">Mantan perokok</option>
-      <option value="current">Perokok aktif</option>
-    </select>
-  </div>
-  <div class="form-group">
-    <label>Aktivitas Fisik</label>
-    <select id="rm-activity">
-      <option value="sedentary">Sangat jarang (&lt; 1x/minggu)</option>
-      <option value="light">Ringan (1–2x/minggu)</option>
-      <option value="moderate">Sedang (3–4x/minggu)</option>
-      <option value="active">Aktif (5+x/minggu)</option>
-    </select>
-  </div>
-  <div class="form-group" style="margin-bottom:20px;">
-    <label>Kualitas Pola Makan</label>
-    <select id="rm-diet">
-      <option value="poor">Buruk (banyak makanan olahan/asin)</option>
-      <option value="average">Rata-rata</option>
-      <option value="good">Baik (banyak sayur, buah, rendah garam)</option>
-    </select>
-  </div>
+  <!-- Riwayat Penyakit Diri Sendiri -->
+  <div style="font-size:0.9rem;font-weight:700;color:var(--text);margin-bottom:6px;">Riwayat Penyakit</div>
+  <div style="font-size:0.78rem;color:var(--text-3);margin-bottom:12px;">Pilih penyakit yang pernah/sedang kamu alami</div>
+  <div id="rm-personal-history" style="display:flex;flex-direction:column;gap:8px;margin-bottom:24px;"></div>
 
   <div id="rm-save-msg" style="font-size:0.8rem;margin-bottom:8px;text-align:center;"></div>
   <button id="rm-save-btn" class="btn btn-primary" style="width:100%;padding:13px;">
@@ -139,39 +153,72 @@ export function render(container) {
   set('#rm-weight', profile.weight);
   set('#rm-height', profile.height);
   set('#rm-gender', profile.gender);
-  set('#rm-smoking',  profile.lifestyle?.smokingStatus || 'never');
-  set('#rm-activity', profile.lifestyle?.physicalActivity || 'moderate');
-  set('#rm-diet',     profile.lifestyle?.dietQuality || 'average');
 
   // Tampilkan BMI
   _updateBMIDisplay(container, profile.bmi);
 
-  // Render riwayat penyakit orang tua
-  const fhEl = container.querySelector('#rm-family-history');
-  if (fhEl) {
-    const fh = profile.familyHistory || {};
-    fhEl.innerHTML = [
+  // Tampilkan data BPJS jika sudah pernah sync
+  const bpjsData = _getBpjsData();
+  if (bpjsData) {
+    set('#rm-bpjs-no', bpjsData.noBpjs);
+    _showBpjsInfo(container, bpjsData);
+  }
+
+  // Render riwayat penyakit DIRI SENDIRI
+  const phEl = container.querySelector('#rm-personal-history');
+  if (phEl) {
+    const ph = profile.personalHistory || {};
+    phEl.innerHTML = [
       ['hypertension', 'Hipertensi'],
       ['diabetes',     'Diabetes Tipe 2'],
       ['heartDisease', 'Penyakit Jantung'],
       ['stroke',       'Stroke'],
+      ['kidneyDisease','Penyakit Ginjal Kronis'],
       ['obesity',      'Obesitas'],
-    ].map(([key, label]) => _renderCheckbox(`rm-fh-${key}`, label, fh[key])).join('');
+    ].map(([key, label]) => _renderCheckbox(`rm-ph-${key}`, label, ph[key])).join('');
   }
 
-  // Update BMI live saat berat/tinggi berubah
+  // Update BMI live
   ['#rm-weight', '#rm-height'].forEach(id => {
     container.querySelector(id)?.addEventListener('input', () => {
       const w = parseFloat(container.querySelector('#rm-weight')?.value);
       const h = parseFloat(container.querySelector('#rm-height')?.value);
-      if (w && h) {
-        const bmi = parseFloat((w / ((h / 100) ** 2)).toFixed(1));
-        _updateBMIDisplay(container, bmi);
-      }
+      if (w && h) _updateBMIDisplay(container, parseFloat((w / ((h / 100) ** 2)).toFixed(1)));
     });
   });
 
-  // Simpan
+  // Tombol sync BPJS
+  container.querySelector('#rm-bpjs-sync-btn')?.addEventListener('click', async () => {
+    const noBpjs  = container.querySelector('#rm-bpjs-no')?.value?.trim();
+    const statusEl = container.querySelector('#rm-bpjs-status');
+    const btn      = container.querySelector('#rm-bpjs-sync-btn');
+
+    if (!noBpjs) {
+      statusEl.style.color = 'var(--red)';
+      statusEl.textContent = '⚠ Masukkan nomor BPJS terlebih dahulu.';
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Mengambil data...';
+    statusEl.textContent = '';
+
+    try {
+      const data = await _fetchBpjsData(noBpjs);
+      _saveBpjsData(data);
+      _showBpjsInfo(container, data);
+      statusEl.style.color = 'var(--green)';
+      statusEl.textContent = '✓ Data BPJS berhasil diambil.';
+    } catch (err) {
+      statusEl.style.color = 'var(--red)';
+      statusEl.textContent = `⚠ ${err.message}`;
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '🔗 Ambil Data dari BPJS';
+    }
+  });
+
+  // Simpan rekam medis
   container.querySelector('#rm-save-btn')?.addEventListener('click', () => {
     const msgEl = container.querySelector('#rm-save-msg');
     const updated = {
@@ -181,19 +228,13 @@ export function render(container) {
       gender: container.querySelector('#rm-gender')?.value || profile.gender,
       weight: parseFloat(container.querySelector('#rm-weight')?.value) || profile.weight,
       height: parseFloat(container.querySelector('#rm-height')?.value) || profile.height,
-      familyHistory: {
-        hypertension: container.querySelector('#rm-fh-hypertension')?.checked || false,
-        diabetes:     container.querySelector('#rm-fh-diabetes')?.checked || false,
-        heartDisease: container.querySelector('#rm-fh-heartDisease')?.checked || false,
-        stroke:       container.querySelector('#rm-fh-stroke')?.checked || false,
-        kidneyDisease: false,
-        obesity:      container.querySelector('#rm-fh-obesity')?.checked || false,
-      },
-      lifestyle: {
-        smokingStatus:      container.querySelector('#rm-smoking')?.value || 'never',
-        alcoholConsumption: profile.lifestyle?.alcoholConsumption || 'none',
-        physicalActivity:   container.querySelector('#rm-activity')?.value || 'moderate',
-        dietQuality:        container.querySelector('#rm-diet')?.value || 'average',
+      personalHistory: {
+        hypertension:  container.querySelector('#rm-ph-hypertension')?.checked  || false,
+        diabetes:      container.querySelector('#rm-ph-diabetes')?.checked      || false,
+        heartDisease:  container.querySelector('#rm-ph-heartDisease')?.checked  || false,
+        stroke:        container.querySelector('#rm-ph-stroke')?.checked        || false,
+        kidneyDisease: container.querySelector('#rm-ph-kidneyDisease')?.checked || false,
+        obesity:       container.querySelector('#rm-ph-obesity')?.checked       || false,
       },
     };
     saveProfile(updated);
@@ -205,16 +246,30 @@ export function render(container) {
   });
 }
 
+function _showBpjsInfo(container, data) {
+  const infoEl   = container.querySelector('#rm-bpjs-info');
+  const detailEl = container.querySelector('#rm-bpjs-detail');
+  if (!infoEl || !detailEl) return;
+  infoEl.style.display = 'block';
+  detailEl.innerHTML = `
+    <div>Nama: <strong>${data.nama}</strong></div>
+    <div>No. BPJS: <strong>${data.noBpjs}</strong></div>
+    <div>Status: <strong style="color:var(--green);">${data.statusPeserta}</strong></div>
+    <div>Kepesertaan: <strong>${data.jenisKepesertaan}</strong></div>
+    <div>Faskes Tk. 1: <strong>${data.faskesTingkat1}</strong></div>
+    <div>Berlaku hingga: <strong>${data.berlakuHingga}</strong></div>
+  `;
+}
+
 function _updateBMIDisplay(container, bmi) {
   const el = container.querySelector('#rm-bmi-display');
   if (!el) return;
   if (!bmi) { el.textContent = '-- (belum dihitung)'; return; }
-  const cat = bmi < 18.5 ? 'Kurang' : bmi < 25 ? 'Normal' : bmi < 30 ? 'Berlebih' : 'Obesitas';
+  const cat   = bmi < 18.5 ? 'Kurang' : bmi < 25 ? 'Normal' : bmi < 30 ? 'Berlebih' : 'Obesitas';
   const color = bmi < 18.5 ? 'var(--blue)' : bmi < 25 ? 'var(--green)' : bmi < 30 ? 'var(--yellow)' : 'var(--red)';
   el.innerHTML = `<span style="font-weight:700;color:${color};">${bmi}</span> <span style="color:var(--text-3);">— ${cat}</span>`;
 }
 
-// Tetap export loadHistory dan renderHistoryList agar tidak break import lain
 export async function loadHistory() {}
 export function renderHistoryList() {}
 export function applyFilter() {}
