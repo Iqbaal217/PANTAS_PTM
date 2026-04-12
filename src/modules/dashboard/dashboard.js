@@ -303,23 +303,14 @@ export function render(container) {
   // Tombol kamera — buka bottom sheet scan
   const cameraBtn = container.querySelector('#camera-btn');
   if (cameraBtn) {
-    cameraBtn.addEventListener('click', async () => {
-      const overlay   = container.querySelector('#scan-overlay');
-      const sheet     = container.querySelector('#scan-sheet');
-      const content   = container.querySelector('#scan-sheet-content');
+    cameraBtn.addEventListener('click', () => {
+      const overlay = container.querySelector('#scan-overlay');
+      const sheet   = container.querySelector('#scan-sheet');
+      const content = container.querySelector('#scan-sheet-content');
       if (!sheet || !content) return;
 
-      // Tampilkan loading
-      content.innerHTML = `
-        <div style="text-align:center;padding:24px 0;">
-          <div style="font-size:2rem;margin-bottom:10px;">📷</div>
-          <div style="font-size:0.9rem;font-weight:600;color:var(--text);margin-bottom:6px;">Menganalisis makanan...</div>
-          <div style="font-size:0.78rem;color:var(--text-3);">Mohon tunggu sebentar</div>
-        </div>`;
       overlay.style.display = 'block';
       sheet.style.display   = 'block';
-
-      // Tutup saat klik overlay
       overlay.onclick = closeSheet;
 
       function closeSheet() {
@@ -328,60 +319,133 @@ export function render(container) {
         overlay.onclick       = null;
       }
 
-      try {
-        const blob   = await openCamera();
-        const result = await analyzeFood(blob);
-        await saveDetectionResult(result);
-
-        const conf = Math.round(result.confidence * 100);
+      function showPicker() {
         content.innerHTML = `
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-            <div style="font-size:1rem;font-weight:700;color:var(--text);">📷 Hasil Scan Makanan</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+            <div style="font-size:1rem;font-weight:700;color:var(--text);">📷 Scan Makanan</div>
             <button id="close-sheet-btn" style="background:none;border:none;cursor:pointer;font-size:1.1rem;color:var(--text-3);">✕</button>
           </div>
-          <div style="background:var(--surface-2);border-radius:var(--radius-lg);padding:16px;margin-bottom:14px;">
-            <div style="font-size:1.1rem;font-weight:700;color:var(--text);margin-bottom:4px;">${result.foodName}</div>
-            <div style="font-size:0.75rem;color:var(--text-3);">Akurasi deteksi: ${conf}%</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:8px;">
+            <button id="use-camera-btn" style="display:flex;flex-direction:column;align-items:center;gap:10px;padding:20px 12px;background:var(--blue-soft);border:2px solid rgba(37,99,235,0.2);border-radius:var(--radius-lg);cursor:pointer;">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/>
+                <circle cx="12" cy="13" r="4"/>
+              </svg>
+              <span style="font-size:0.82rem;font-weight:600;color:var(--blue);">Ambil Foto</span>
+            </button>
+            <button id="use-upload-btn" style="display:flex;flex-direction:column;align-items:center;gap:10px;padding:20px 12px;background:var(--surface-2);border:2px solid var(--border);border-radius:var(--radius-lg);cursor:pointer;">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--text-2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                <polyline points="17 8 12 3 7 8"/>
+                <line x1="12" y1="3" x2="12" y2="15"/>
+              </svg>
+              <span style="font-size:0.82rem;font-weight:600;color:var(--text-2);">Upload Foto</span>
+            </button>
           </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
+          <input type="file" id="upload-input" accept="image/*" style="display:none;" />
+          <input type="file" id="camera-input" accept="image/*" capture="environment" style="display:none;" />`;
+
+        content.querySelector('#close-sheet-btn').addEventListener('click', closeSheet);
+
+        // Ambil foto via kamera
+        content.querySelector('#use-camera-btn').addEventListener('click', () => {
+          content.querySelector('#camera-input').click();
+        });
+        content.querySelector('#camera-input').addEventListener('change', (e) => {
+          const file = e.target.files[0];
+          if (file) showPreview(file);
+        });
+
+        // Upload dari galeri
+        content.querySelector('#use-upload-btn').addEventListener('click', () => {
+          content.querySelector('#upload-input').click();
+        });
+        content.querySelector('#upload-input').addEventListener('change', (e) => {
+          const file = e.target.files[0];
+          if (file) showPreview(file);
+        });
+      }
+
+      function showPreview(file) {
+        const url = URL.createObjectURL(file);
+        content.innerHTML = `
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+            <div style="font-size:1rem;font-weight:700;color:var(--text);">Preview Foto</div>
+            <button id="close-sheet-btn" style="background:none;border:none;cursor:pointer;font-size:1.1rem;color:var(--text-3);">✕</button>
+          </div>
+          <img src="${url}" alt="preview" style="width:100%;max-height:220px;object-fit:cover;border-radius:var(--radius-lg);margin-bottom:14px;" />
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <button id="retake-btn" class="btn" style="width:100%;">← Ulangi</button>
+            <button id="analyze-btn" class="btn btn-primary" style="width:100%;">Analisis</button>
+          </div>`;
+
+        content.querySelector('#close-sheet-btn').addEventListener('click', closeSheet);
+        content.querySelector('#retake-btn').addEventListener('click', showPicker);
+        content.querySelector('#analyze-btn').addEventListener('click', () => showAnalyzing(file));
+      }
+
+      async function showAnalyzing(file) {
+        content.innerHTML = `
+          <div style="text-align:center;padding:32px 0;">
+            <div style="font-size:2.5rem;margin-bottom:12px;">🔍</div>
+            <div style="font-size:0.9rem;font-weight:600;color:var(--text);margin-bottom:6px;">Menganalisis makanan...</div>
+            <div style="font-size:0.78rem;color:var(--text-3);">AI sedang memproses gambar Anda</div>
+          </div>`;
+
+        try {
+          const blob   = file instanceof Blob ? file : await openCamera();
+          const result = await analyzeFood(blob);
+          await saveDetectionResult(result);
+          showResult(result, URL.createObjectURL(file));
+        } catch (err) {
+          content.innerHTML = `
+            <div style="text-align:center;padding:20px 0;">
+              <div style="font-size:2rem;margin-bottom:10px;">⚠️</div>
+              <div style="font-size:0.9rem;font-weight:600;color:var(--text);margin-bottom:6px;">Gagal mendeteksi makanan</div>
+              <div style="font-size:0.78rem;color:var(--text-3);margin-bottom:16px;">${err.message}</div>
+              <button id="retry-btn" class="btn btn-primary" style="width:100%;">Coba Lagi</button>
+            </div>`;
+          content.querySelector('#retry-btn').addEventListener('click', showPicker);
+        }
+      }
+
+      function showResult(result, imgUrl) {
+        const conf = Math.round(result.confidence * 100);
+        content.innerHTML = `
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+            <div style="font-size:1rem;font-weight:700;color:var(--text);">Hasil Analisis</div>
+            <button id="close-sheet-btn" style="background:none;border:none;cursor:pointer;font-size:1.1rem;color:var(--text-3);">✕</button>
+          </div>
+          <img src="${imgUrl}" alt="makanan" style="width:100%;max-height:160px;object-fit:cover;border-radius:var(--radius-lg);margin-bottom:12px;" />
+          <div style="background:var(--surface-2);border-radius:var(--radius);padding:12px 14px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;">
+            <div style="font-size:1rem;font-weight:700;color:var(--text);">${result.foodName}</div>
+            <span style="font-size:0.7rem;background:var(--blue-soft);color:var(--blue);padding:3px 8px;border-radius:var(--radius-full);font-weight:600;">${conf}% akurat</span>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
             <div style="background:var(--red-soft);border-radius:var(--radius);padding:12px;text-align:center;">
               <div style="font-size:1.4rem;font-weight:700;color:var(--red);">${result.calories}</div>
-              <div style="font-size:0.7rem;color:var(--text-3);margin-top:2px;">Kalori (kkal)</div>
+              <div style="font-size:0.68rem;color:var(--text-3);margin-top:2px;">Kalori (kkal)</div>
             </div>
             <div style="background:var(--blue-soft);border-radius:var(--radius);padding:12px;text-align:center;">
               <div style="font-size:1.4rem;font-weight:700;color:var(--blue);">${result.carbohydrates}g</div>
-              <div style="font-size:0.7rem;color:var(--text-3);margin-top:2px;">Karbohidrat</div>
+              <div style="font-size:0.68rem;color:var(--text-3);margin-top:2px;">Karbohidrat</div>
             </div>
             <div style="background:#f0fdf4;border-radius:var(--radius);padding:12px;text-align:center;">
               <div style="font-size:1.4rem;font-weight:700;color:var(--green);">${result.protein}g</div>
-              <div style="font-size:0.7rem;color:var(--text-3);margin-top:2px;">Protein</div>
+              <div style="font-size:0.68rem;color:var(--text-3);margin-top:2px;">Protein</div>
             </div>
             <div style="background:#fffbeb;border-radius:var(--radius);padding:12px;text-align:center;">
               <div style="font-size:1.4rem;font-weight:700;color:var(--yellow);">${result.fat}g</div>
-              <div style="font-size:0.7rem;color:var(--text-3);margin-top:2px;">Lemak</div>
+              <div style="font-size:0.68rem;color:var(--text-3);margin-top:2px;">Lemak</div>
             </div>
           </div>
           <button id="scan-again-btn" class="btn btn-primary" style="width:100%;">Scan Lagi</button>`;
 
-        sheet.querySelector('#close-sheet-btn')?.addEventListener('click', closeSheet);
-        sheet.querySelector('#scan-again-btn')?.addEventListener('click', () => {
-          closeSheet();
-          setTimeout(() => cameraBtn.click(), 200);
-        });
-
-      } catch (err) {
-        content.innerHTML = `
-          <div style="text-align:center;padding:16px 0;">
-            <div style="font-size:2rem;margin-bottom:10px;">⚠️</div>
-            <div style="font-size:0.9rem;font-weight:600;color:var(--text);margin-bottom:6px;">Gagal mendeteksi makanan</div>
-            <div style="font-size:0.78rem;color:var(--text-3);margin-bottom:16px;">${err.message}</div>
-            <button id="retry-scan-btn" class="btn btn-primary" style="width:100%;">Coba Lagi</button>
-          </div>`;
-        sheet.querySelector('#retry-scan-btn')?.addEventListener('click', () => {
-          closeSheet();
-          setTimeout(() => cameraBtn.click(), 200);
-        });
+        content.querySelector('#close-sheet-btn').addEventListener('click', closeSheet);
+        content.querySelector('#scan-again-btn').addEventListener('click', showPicker);
       }
+
+      showPicker();
     });
   }
 
