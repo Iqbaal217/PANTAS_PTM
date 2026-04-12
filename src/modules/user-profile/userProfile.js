@@ -216,7 +216,7 @@ export function render(container) {
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
         <div class="form-group" style="grid-column:1/-1;">
           <label>Nama Lengkap</label>
-          <input type="text" id="ob-name" placeholder="Ahmad Iqbal" />
+          <input type="text" id="ob-name" placeholder="Masukan nama lengkap anda" />
         </div>
         <div class="form-group">
           <label>Usia (tahun)</label>

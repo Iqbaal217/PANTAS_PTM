@@ -13,10 +13,17 @@ const LOGIN_TEMPLATE = `
     </div>
     <div class="auth-heading">Platform Monitoring PTM Terintegrasi</div>
     <div class="auth-subheading">Masuk untuk memantau kesehatan Anda</div>
+
+    <!-- Banner info belum punya akun -->
+    <div id="no-account-banner" style="display:none;background:var(--blue-soft);border:1px solid rgba(37,99,235,0.25);border-radius:var(--radius);padding:12px 14px;margin-bottom:14px;font-size:0.8rem;color:var(--blue);line-height:1.6;">
+      <div style="font-weight:600;margin-bottom:4px;">👋 Belum punya akun?</div>
+      Klik <strong>"Daftar sekarang"</strong> di bawah untuk membuat akun baru dan mulai memantau kesehatan Anda.
+    </div>
+
     <form id="login-form" novalidate>
       <div class="form-group">
         <label for="login-email">Email</label>
-        <input type="email" id="login-email" name="email" placeholder="anda@email.com" autocomplete="email" required />
+        <input type="email" id="login-email" name="email" placeholder="anda@gmail.com" autocomplete="email" required />
       </div>
       <div class="form-group">
         <label for="login-password">Password</label>
@@ -149,6 +156,9 @@ export function render(container) {
         window.location.hash = '#/dashboard';
       } else {
         errorEl.textContent = result.error;
+        // Tampilkan banner reminder daftar akun
+        const banner = form.closest('.auth-card')?.querySelector('#no-account-banner');
+        if (banner) banner.style.display = 'block';
       }
     } catch (err) {
       errorEl.textContent = 'Terjadi kesalahan. Silakan coba lagi.';
