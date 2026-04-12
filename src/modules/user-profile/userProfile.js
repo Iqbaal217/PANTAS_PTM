@@ -214,14 +214,14 @@ export function render(container) {
     <!-- Step 1: Data Diri -->
     <div id="step-1">
       <div style="font-size:1rem;font-weight:700;color:var(--text);margin-bottom:4px;">Data Diri</div>
-      <div style="font-size:0.82rem;color:var(--text-3);margin-bottom:18px;">Informasi dasar untuk kalkulasi BMI dan faktor usia</div>
+      <div style="font-size:0.82rem;color:var(--text-3);margin-bottom:18px;">Lengkapi informasi akun dan data fisik Anda</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
         <div class="form-group" style="grid-column:1/-1;">
           <label>Nama Lengkap</label>
           <input type="text" id="ob-name" placeholder="Masukan nama lengkap anda" />
         </div>
         <div class="form-group" style="grid-column:1/-1;">
-          <label>Email</label>
+          <label>Email (Gmail)</label>
           <input type="email" id="ob-email" placeholder="anda@gmail.com" autocomplete="email" />
         </div>
         <div class="form-group" style="grid-column:1/-1;">
@@ -252,15 +252,15 @@ export function render(container) {
       <button id="step-1-next" class="btn btn-primary btn-full" style="margin-top:8px;">Lanjut →</button>
     </div>
 
-    <!-- Step 2: Riwayat Keluarga -->
+    <!-- Step 2: Riwayat Penyakit Orang Tua -->
     <div id="step-2" style="display:none;">
-      <div style="font-size:1rem;font-weight:700;color:var(--text);margin-bottom:4px;">Riwayat Keluarga</div>
-      <div style="font-size:0.82rem;color:var(--text-3);margin-bottom:18px;">Apakah anggota keluarga inti pernah didiagnosis kondisi berikut?</div>
+      <div style="font-size:1rem;font-weight:700;color:var(--text);margin-bottom:4px;">Riwayat Penyakit Orang Tua</div>
+      <div style="font-size:0.82rem;color:var(--text-3);margin-bottom:18px;">Pilih penyakit yang pernah/sedang dialami orang tua Anda</div>
       <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px;">
         ${_renderCheckboxGroup('fh', [
           ['hypertension', 'Hipertensi (Tekanan Darah Tinggi)'],
-          ['heartDisease', 'Penyakit Jantung Koroner'],
-          ['diabetes', 'Diabetes Mellitus'],
+          ['heartDisease', 'Penyakit Jantung'],
+          ['diabetes', 'Diabetes Tipe 2'],
           ['stroke', 'Stroke'],
           ['kidneyDisease', 'Penyakit Ginjal Kronis'],
           ['obesity', 'Obesitas'],
@@ -272,9 +272,9 @@ export function render(container) {
       </div>
     </div>
 
-    <!-- Step 3: Gaya Hidup & SATU SEHAT -->
+    <!-- Step 3: Gaya Hidup -->
     <div id="step-3" style="display:none;">
-      <div style="font-size:1rem;font-weight:700;color:var(--text);margin-bottom:4px;">Gaya Hidup & SATU SEHAT</div>
+      <div style="font-size:1rem;font-weight:700;color:var(--text);margin-bottom:4px;">Gaya Hidup</div>
       <div style="font-size:0.82rem;color:var(--text-3);margin-bottom:18px;">Data ini meningkatkan akurasi analisis risiko AI</div>
       <div class="form-group">
         <label>Status Merokok</label>
@@ -287,7 +287,7 @@ export function render(container) {
       <div class="form-group">
         <label>Aktivitas Fisik</label>
         <select id="ob-activity">
-          <option value="sedentary">Sangat jarang (< 1x/minggu)</option>
+          <option value="sedentary">Sangat jarang (&lt; 1x/minggu)</option>
           <option value="light">Ringan (1–2x/minggu)</option>
           <option value="moderate" selected>Sedang (3–4x/minggu)</option>
           <option value="active">Aktif (5+x/minggu)</option>
@@ -300,20 +300,6 @@ export function render(container) {
           <option value="average" selected>Rata-rata</option>
           <option value="good">Baik (banyak sayur, buah, rendah garam)</option>
         </select>
-      </div>
-      <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px;margin-bottom:16px;">
-        <div style="font-size:0.8rem;font-weight:600;color:var(--text-2);margin-bottom:8px;">
-          🏥 Integrasi SATU SEHAT (Opsional)
-        </div>
-        <div style="font-size:0.75rem;color:var(--text-3);margin-bottom:10px;">
-          Hubungkan dengan SATU SEHAT untuk sinkronisasi rekam medis dan riwayat BPJS Anda secara otomatis.
-        </div>
-        <div class="form-group" style="margin-bottom:8px;">
-          <label>ID SATU SEHAT / NIK</label>
-          <input type="text" id="ob-satusehat" placeholder="3271xxxxxxxxxxxx" maxlength="16" />
-        </div>
-        <button id="ob-sync-btn" class="btn btn-sm" style="width:100%;">Sinkronisasi SATU SEHAT</button>
-        <div id="ob-sync-status" style="font-size:0.72rem;color:var(--text-3);margin-top:6px;"></div>
       </div>
       <div style="display:flex;gap:8px;">
         <button id="step-3-back" class="btn btn-full" style="flex:1;">← Kembali</button>
@@ -365,29 +351,6 @@ function _attachOnboardingListeners(container) {
   container.querySelector('#step-2-back')?.addEventListener('click', () => showStep(1));
   container.querySelector('#step-2-next')?.addEventListener('click', () => showStep(3));
   container.querySelector('#step-3-back')?.addEventListener('click', () => showStep(2));
-
-  // SATU SEHAT sync
-  container.querySelector('#ob-sync-btn')?.addEventListener('click', async () => {
-    const id = container.querySelector('#ob-satusehat')?.value?.trim();
-    const statusEl = container.querySelector('#ob-sync-status');
-    if (!id || id.length < 10) {
-      if (statusEl) statusEl.textContent = '⚠ Masukkan ID SATU SEHAT yang valid.';
-      return;
-    }
-    const btn = container.querySelector('#ob-sync-btn');
-    btn.disabled = true;
-    btn.textContent = 'Menyinkronkan...';
-    if (statusEl) statusEl.textContent = '';
-
-    const result = await syncWithSatuSehat(id);
-    btn.disabled = false;
-    btn.textContent = 'Sinkronisasi SATU SEHAT';
-
-    if (result.success) {
-      if (statusEl) statusEl.innerHTML = '✓ Berhasil disinkronkan. Rekam medis dari SATU SEHAT telah dimuat.';
-      if (statusEl) statusEl.style.color = 'var(--green)';
-    }
-  });
 
   // Finish onboarding
   container.querySelector('#step-3-finish')?.addEventListener('click', () => {
