@@ -221,7 +221,7 @@ export function render(container) {
           <input type="text" id="ob-name" placeholder="Masukan nama lengkap anda" />
         </div>
         <div class="form-group" style="grid-column:1/-1;">
-          <label>Email (Gmail)</label>
+          <label>Email</label>
           <input type="email" id="ob-email" placeholder="anda@gmail.com" autocomplete="email" />
         </div>
         <div class="form-group" style="grid-column:1/-1;">
