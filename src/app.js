@@ -246,8 +246,13 @@ document.addEventListener('DOMContentLoaded', handleRoute);
 window.addEventListener('hashchange', handleRoute);
 
 // Re-handle on resize (mobile ↔ desktop switch)
+// Hanya trigger jika lebar layar berubah (bukan keyboard virtual yang muncul)
 let _resizeTimer;
+let _lastWidth = window.innerWidth;
 window.addEventListener('resize', () => {
+  const currentWidth = window.innerWidth;
+  if (currentWidth === _lastWidth) return; // keyboard virtual — abaikan
+  _lastWidth = currentWidth;
   clearTimeout(_resizeTimer);
   _resizeTimer = setTimeout(handleRoute, 150);
 });
