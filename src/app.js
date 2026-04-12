@@ -199,9 +199,17 @@ function handleRoute() {
     appEl.style.display = '';
   }
 
-  // Jika tidak ada session → login (termasuk onboarding tanpa session)
-  if (hash !== '#/login' && !getSession()) {
+  // Jika tidak ada session → login
+  // Onboarding boleh diakses tanpa session (untuk proses daftar baru)
+  const protectedRoutes = ['#/dashboard', '#/history', '#/reminders', '#/consultation'];
+  if (protectedRoutes.includes(hash) && !getSession()) {
     navigate('#/login');
+    return;
+  }
+
+  // Redirect dari login/root ke dashboard jika sudah punya session valid
+  if ((hash === '#/login' || !hash) && getSession()) {
+    navigate('#/dashboard');
     return;
   }
 

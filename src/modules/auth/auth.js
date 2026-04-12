@@ -1,5 +1,6 @@
-const SESSION_KEY = 'pantas_session';
+const SESSION_KEY  = 'pantas_session';
 const ACCOUNTS_KEY = 'pantas_accounts';
+const TOKENS_KEY   = 'pantas_valid_tokens';
 
 const LOGIN_TEMPLATE = `
 <div class="auth-screen">
@@ -107,22 +108,37 @@ export function validateLoginForm(email, password) {
  * Saves the session token to localStorage.
  * @param {string} token
  */
+/**
+ * Saves the session token to localStorage and registers it as valid.
+ * @param {string} token
+ */
 export function saveSession(token) {
   localStorage.setItem(SESSION_KEY, token);
+  const tokens = JSON.parse(localStorage.getItem(TOKENS_KEY) || '[]');
+  tokens.push(token);
+  localStorage.setItem(TOKENS_KEY, JSON.stringify(tokens));
 }
 
 /**
- * Retrieves the session token from localStorage.
+ * Retrieves the session token only if it's a valid issued token.
  * @returns {string|null}
  */
 export function getSession() {
-  return localStorage.getItem(SESSION_KEY);
+  const token  = localStorage.getItem(SESSION_KEY);
+  if (!token) return null;
+  const tokens = JSON.parse(localStorage.getItem(TOKENS_KEY) || '[]');
+  return tokens.includes(token) ? token : null;
 }
 
 /**
  * Removes the session token from localStorage.
  */
 export function clearSession() {
+  const token = localStorage.getItem(SESSION_KEY);
+  if (token) {
+    const tokens = JSON.parse(localStorage.getItem(TOKENS_KEY) || '[]');
+    localStorage.setItem(TOKENS_KEY, JSON.stringify(tokens.filter(t => t !== token)));
+  }
   localStorage.removeItem(SESSION_KEY);
 }
 
@@ -253,10 +269,8 @@ export function render(container) {
   });
 
   // ── Daftar sekarang ──────────────────────────────────────
-  container.querySelector('#register-link')?.addEventListener('click', async (e) => {
+  container.querySelector('#register-link')?.addEventListener('click', (e) => {
     e.preventDefault();
-    const demoToken = `demo-token-${Date.now()}`;
-    saveSession(demoToken);
     window.location.hash = '#/onboarding';
   });
 
