@@ -1,4 +1,5 @@
 const SESSION_KEY = 'pantas_session';
+const ACCOUNTS_KEY = 'pantas_accounts';
 
 const LOGIN_TEMPLATE = `
 <div class="auth-screen">
@@ -92,23 +93,49 @@ export function clearSession() {
 }
 
 /**
- * Attempts to log in with the given credentials (mock API).
+ * Simpan akun baru ke localStorage saat daftar.
  * @param {string} email
  * @param {string} password
- * @returns {Promise<{ success: boolean, token?: string, error?: string }>}
+ */
+export function registerAccount(email, password) {
+  const accounts = JSON.parse(localStorage.getItem(ACCOUNTS_KEY) || '{}');
+  accounts[email.toLowerCase()] = password;
+  localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accounts));
+}
+
+/**
+ * Cek apakah email sudah terdaftar.
+ * @param {string} email
+ * @returns {boolean}
+ */
+export function isEmailRegistered(email) {
+  const accounts = JSON.parse(localStorage.getItem(ACCOUNTS_KEY) || '{}');
+  return email.toLowerCase() in accounts;
+}
+
+/**
+ * Attempts to log in with the given credentials.
+ * @param {string} email
+ * @param {string} password
+ * @returns {Promise<{ success: boolean, token?: string, error?: string, notRegistered?: boolean }>}
  */
 export async function login(email, password) {
   await new Promise((resolve) => setTimeout(resolve, 200));
 
-  const isValidCredentials = email.includes('@') && password.length >= 6;
+  const accounts = JSON.parse(localStorage.getItem(ACCOUNTS_KEY) || '{}');
+  const key = email.toLowerCase();
 
-  if (isValidCredentials) {
-    const token = `mock-token-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    saveSession(token);
-    return { success: true, token };
+  if (!(key in accounts)) {
+    return { success: false, error: 'Email belum terdaftar. Silakan daftar terlebih dahulu.', notRegistered: true };
   }
 
-  return { success: false, error: 'Email atau password tidak valid' };
+  if (accounts[key] !== password) {
+    return { success: false, error: 'Password salah. Silakan coba lagi.' };
+  }
+
+  const token = `token-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  saveSession(token);
+  return { success: true, token };
 }
 
 /**
@@ -156,9 +183,9 @@ export function render(container) {
         window.location.hash = '#/dashboard';
       } else {
         errorEl.textContent = result.error;
-        // Tampilkan banner reminder daftar akun
+        // Tampilkan banner reminder daftar akun jika email belum terdaftar
         const banner = form.closest('.auth-card')?.querySelector('#no-account-banner');
-        if (banner) banner.style.display = 'block';
+        if (banner && result.notRegistered) banner.style.display = 'block';
       }
     } catch (err) {
       errorEl.textContent = 'Terjadi kesalahan. Silakan coba lagi.';

@@ -5,6 +5,8 @@
  * Data disimpan di localStorage dengan enkripsi sederhana.
  */
 
+import { registerAccount } from '../auth/auth.js';
+
 const PROFILE_KEY = 'pantas_user_profile';
 const SATUSEHAT_KEY = 'pantas_satusehat_sync';
 
@@ -218,6 +220,14 @@ export function render(container) {
           <label>Nama Lengkap</label>
           <input type="text" id="ob-name" placeholder="Masukan nama lengkap anda" />
         </div>
+        <div class="form-group" style="grid-column:1/-1;">
+          <label>Email</label>
+          <input type="email" id="ob-email" placeholder="anda@gmail.com" autocomplete="email" />
+        </div>
+        <div class="form-group" style="grid-column:1/-1;">
+          <label>Password</label>
+          <input type="password" id="ob-password" placeholder="Minimal 6 karakter" autocomplete="new-password" />
+        </div>
         <div class="form-group">
           <label>Usia (tahun)</label>
           <input type="number" id="ob-age" placeholder="35" min="1" max="120" />
@@ -336,14 +346,17 @@ function _attachOnboardingListeners(container) {
   };
 
   container.querySelector('#step-1-next')?.addEventListener('click', () => {
-    const name   = container.querySelector('#ob-name')?.value?.trim();
-    const age    = parseInt(container.querySelector('#ob-age')?.value);
-    const gender = container.querySelector('#ob-gender')?.value;
-    const weight = parseFloat(container.querySelector('#ob-weight')?.value);
-    const height = parseFloat(container.querySelector('#ob-height')?.value);
+    const name     = container.querySelector('#ob-name')?.value?.trim();
+    const email    = container.querySelector('#ob-email')?.value?.trim();
+    const password = container.querySelector('#ob-password')?.value;
+    const age      = parseInt(container.querySelector('#ob-age')?.value);
+    const gender   = container.querySelector('#ob-gender')?.value;
+    const weight   = parseFloat(container.querySelector('#ob-weight')?.value);
+    const height   = parseFloat(container.querySelector('#ob-height')?.value);
 
-    if (!name || !age || !gender || !weight || !height) {
-      alert('Harap lengkapi semua data diri.');
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!name || !email || !emailRegex.test(email) || !password || password.length < 6 || !age || !gender || !weight || !height) {
+      alert('Harap lengkapi semua data diri. Password minimal 6 karakter.');
       return;
     }
     showStep(2);
@@ -378,6 +391,12 @@ function _attachOnboardingListeners(container) {
 
   // Finish onboarding
   container.querySelector('#step-3-finish')?.addEventListener('click', () => {
+    const email    = container.querySelector('#ob-email')?.value?.trim();
+    const password = container.querySelector('#ob-password')?.value;
+
+    // Simpan akun agar bisa login berikutnya
+    if (email && password) registerAccount(email, password);
+
     const profile = {
       ...DEFAULT_PROFILE,
       name:   container.querySelector('#ob-name')?.value?.trim(),
