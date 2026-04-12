@@ -242,8 +242,17 @@ export function navigate(route) {
   window.location.hash = route;
 }
 
+let _currentHash = null;
+
+function handleRouteIfChanged() {
+  const hash = window.location.hash || '';
+  if (hash === _currentHash) return; // hash tidak berubah, skip re-render
+  _currentHash = hash;
+  handleRoute();
+}
+
 document.addEventListener('DOMContentLoaded', handleRoute);
-window.addEventListener('hashchange', handleRoute);
+window.addEventListener('hashchange', handleRouteIfChanged);
 
 // Re-handle on resize (mobile ↔ desktop switch)
 // Hanya trigger jika lebar layar berubah (bukan keyboard virtual yang muncul)
