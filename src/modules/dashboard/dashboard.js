@@ -7,7 +7,7 @@ import { analyzeRisk } from '../risk-engine/riskEngine.js';
 import { analyzeLongitudinal, recordReading, getLifestyleGuide } from '../risk-engine/longitudinalAnalysis.js';
 import { getProfile, calculateGeneticRiskScore, getSatuSehatRecord } from '../user-profile/userProfile.js';
 import { renderHeartRateChart, renderBloodPressureChart } from '../chart-renderer/chartRenderer.js';
-import { openCamera } from '../kalori-detector/kaloriDetector.js';
+import { openCamera, analyzeFood, saveDetectionResult } from '../kalori-detector/kaloriDetector.js';
 import eventBus from '../../utils/eventBus.js';
 
 // HTML template dashboard
@@ -46,14 +46,6 @@ const DASHBOARD_INNER_HTML = `
         <span id="risk-level" class="risk-badge risk-low" style="cursor:pointer;">Rendah</span>
       </div>
       <div class="card-footer">Klik detail</div>
-    </div>
-
-    <div class="card" style="border-top:3px solid #d97706;">
-      <div class="card-label">📷 Kalori</div>
-      <div style="margin-top:6px;">
-        <button id="camera-btn" class="btn btn-sm" style="background:var(--blue-soft);color:var(--blue);border-radius:9px;padding:6px 10px;font-size:0.72rem;width:100%;">Scan Makanan</button>
-      </div>
-      <div class="card-footer">Deteksi AI</div>
     </div>
   </div>
 
@@ -178,6 +170,16 @@ const DASHBOARD_HTML = `
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
       Riwayat
     </a>
+    <!-- Tombol Scan Tengah -->
+    <div class="bottom-nav-scan-wrap">
+      <button id="camera-btn" class="bottom-nav-scan-btn" aria-label="Scan Makanan">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/>
+          <circle cx="12" cy="13" r="4"/>
+        </svg>
+      </button>
+      <span style="font-size:0.6rem;color:var(--text-3);margin-top:2px;">Scan</span>
+    </div>
     <a href="#/reminders" class="bottom-nav-item">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
       Pengingat
@@ -191,6 +193,13 @@ const DASHBOARD_HTML = `
       Keluar
     </button>
   </nav>
+
+  <!-- Bottom Sheet Hasil Scan -->
+  <div id="scan-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:300;" ></div>
+  <div id="scan-sheet" style="display:none;position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:var(--max-w);background:var(--surface);border-radius:20px 20px 0 0;z-index:301;padding:20px 20px 32px;box-shadow:0 -4px 24px rgba(0,0,0,0.12);transition:transform 0.3s ease;">
+    <div style="width:40px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 16px;"></div>
+    <div id="scan-sheet-content"></div>
+  </div>
 </div>
 `;
 
@@ -291,14 +300,87 @@ export function render(container) {
     });
   }
 
-  // Tombol kamera
+  // Tombol kamera — buka bottom sheet scan
   const cameraBtn = container.querySelector('#camera-btn');
   if (cameraBtn) {
     cameraBtn.addEventListener('click', async () => {
+      const overlay   = container.querySelector('#scan-overlay');
+      const sheet     = container.querySelector('#scan-sheet');
+      const content   = container.querySelector('#scan-sheet-content');
+      if (!sheet || !content) return;
+
+      // Tampilkan loading
+      content.innerHTML = `
+        <div style="text-align:center;padding:24px 0;">
+          <div style="font-size:2rem;margin-bottom:10px;">📷</div>
+          <div style="font-size:0.9rem;font-weight:600;color:var(--text);margin-bottom:6px;">Menganalisis makanan...</div>
+          <div style="font-size:0.78rem;color:var(--text-3);">Mohon tunggu sebentar</div>
+        </div>`;
+      overlay.style.display = 'block';
+      sheet.style.display   = 'block';
+
+      // Tutup saat klik overlay
+      overlay.onclick = closeSheet;
+
+      function closeSheet() {
+        overlay.style.display = 'none';
+        sheet.style.display   = 'none';
+        overlay.onclick       = null;
+      }
+
       try {
-        await openCamera();
+        const blob   = await openCamera();
+        const result = await analyzeFood(blob);
+        await saveDetectionResult(result);
+
+        const conf = Math.round(result.confidence * 100);
+        content.innerHTML = `
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+            <div style="font-size:1rem;font-weight:700;color:var(--text);">📷 Hasil Scan Makanan</div>
+            <button id="close-sheet-btn" style="background:none;border:none;cursor:pointer;font-size:1.1rem;color:var(--text-3);">✕</button>
+          </div>
+          <div style="background:var(--surface-2);border-radius:var(--radius-lg);padding:16px;margin-bottom:14px;">
+            <div style="font-size:1.1rem;font-weight:700;color:var(--text);margin-bottom:4px;">${result.foodName}</div>
+            <div style="font-size:0.75rem;color:var(--text-3);">Akurasi deteksi: ${conf}%</div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
+            <div style="background:var(--red-soft);border-radius:var(--radius);padding:12px;text-align:center;">
+              <div style="font-size:1.4rem;font-weight:700;color:var(--red);">${result.calories}</div>
+              <div style="font-size:0.7rem;color:var(--text-3);margin-top:2px;">Kalori (kkal)</div>
+            </div>
+            <div style="background:var(--blue-soft);border-radius:var(--radius);padding:12px;text-align:center;">
+              <div style="font-size:1.4rem;font-weight:700;color:var(--blue);">${result.carbohydrates}g</div>
+              <div style="font-size:0.7rem;color:var(--text-3);margin-top:2px;">Karbohidrat</div>
+            </div>
+            <div style="background:#f0fdf4;border-radius:var(--radius);padding:12px;text-align:center;">
+              <div style="font-size:1.4rem;font-weight:700;color:var(--green);">${result.protein}g</div>
+              <div style="font-size:0.7rem;color:var(--text-3);margin-top:2px;">Protein</div>
+            </div>
+            <div style="background:#fffbeb;border-radius:var(--radius);padding:12px;text-align:center;">
+              <div style="font-size:1.4rem;font-weight:700;color:var(--yellow);">${result.fat}g</div>
+              <div style="font-size:0.7rem;color:var(--text-3);margin-top:2px;">Lemak</div>
+            </div>
+          </div>
+          <button id="scan-again-btn" class="btn btn-primary" style="width:100%;">Scan Lagi</button>`;
+
+        sheet.querySelector('#close-sheet-btn')?.addEventListener('click', closeSheet);
+        sheet.querySelector('#scan-again-btn')?.addEventListener('click', () => {
+          closeSheet();
+          setTimeout(() => cameraBtn.click(), 200);
+        });
+
       } catch (err) {
-        console.error('[Dashboard] Kamera gagal dibuka:', err);
+        content.innerHTML = `
+          <div style="text-align:center;padding:16px 0;">
+            <div style="font-size:2rem;margin-bottom:10px;">⚠️</div>
+            <div style="font-size:0.9rem;font-weight:600;color:var(--text);margin-bottom:6px;">Gagal mendeteksi makanan</div>
+            <div style="font-size:0.78rem;color:var(--text-3);margin-bottom:16px;">${err.message}</div>
+            <button id="retry-scan-btn" class="btn btn-primary" style="width:100%;">Coba Lagi</button>
+          </div>`;
+        sheet.querySelector('#retry-scan-btn')?.addEventListener('click', () => {
+          closeSheet();
+          setTimeout(() => cameraBtn.click(), 200);
+        });
       }
     });
   }
