@@ -158,13 +158,24 @@ const DASHBOARD_HTML = `
       <button id="connect-btn" class="btn btn-sm" style="background:var(--blue);color:white;border-radius:10px;padding:7px 12px;font-size:0.75rem;">
         Hubungkan
       </button>
-      <button id="logout-btn" style="background:none;border:none;cursor:pointer;padding:6px;display:flex;align-items:center;justify-content:center;" title="Keluar">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>
-          <polyline points="16 17 21 12 16 7"/>
-          <line x1="21" y1="12" x2="9" y2="12"/>
+      <button id="logout-btn" style="background:none;border:none;cursor:pointer;padding:6px;display:flex;align-items:center;justify-content:center;position:relative;" title="Profil">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
+          <circle cx="12" cy="7" r="4"/>
         </svg>
       </button>
+      <!-- Popup mengambang -->
+      <div id="logout-popup" style="display:none;position:fixed;top:60px;right:12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:0 8px 24px rgba(0,0,0,0.15);z-index:500;min-width:140px;overflow:hidden;">
+        <div id="logout-popup-name" style="padding:10px 14px;font-size:0.78rem;font-weight:600;color:var(--text-2);border-bottom:1px solid var(--border);"></div>
+        <button id="logout-confirm-btn" style="width:100%;padding:12px 14px;background:none;border:none;cursor:pointer;display:flex;align-items:center;gap:8px;font-size:0.82rem;color:var(--red);font-weight:600;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>
+            <polyline points="16 17 21 12 16 7"/>
+            <line x1="21" y1="12" x2="9" y2="12"/>
+          </svg>
+          Keluar
+        </button>
+      </div>
     </div>
   </header>
   <div class="app-content">${DASHBOARD_INNER_HTML}</div>
@@ -295,10 +306,30 @@ export function render(container) {
     });
   }
 
-  // Tombol logout
+  // Tombol logout — tampilkan popup mengambang
   const logoutBtn = container.querySelector('#logout-btn');
-  if (logoutBtn) {
-    logoutBtn.addEventListener('click', () => {
+  const logoutPopup = container.querySelector('#logout-popup');
+  const logoutPopupName = container.querySelector('#logout-popup-name');
+  const logoutConfirmBtn = container.querySelector('#logout-confirm-btn');
+
+  if (logoutBtn && logoutPopup) {
+    // Isi nama user di popup
+    const profile = getProfile();
+    if (logoutPopupName) logoutPopupName.textContent = profile.name || 'Pengguna PANTAS';
+
+    // Toggle popup
+    logoutBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      logoutPopup.style.display = logoutPopup.style.display === 'none' ? 'block' : 'none';
+    });
+
+    // Tutup popup saat klik di luar
+    document.addEventListener('click', () => {
+      logoutPopup.style.display = 'none';
+    });
+
+    // Tombol keluar di dalam popup
+    logoutConfirmBtn?.addEventListener('click', () => {
       import('../auth/auth.js').then(({ logout }) => logout());
     });
   }
