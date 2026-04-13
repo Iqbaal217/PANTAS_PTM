@@ -158,6 +158,13 @@ const DASHBOARD_HTML = `
       <button id="connect-btn" class="btn btn-sm" style="background:var(--blue);color:white;border-radius:10px;padding:7px 12px;font-size:0.75rem;">
         Hubungkan
       </button>
+      <button id="logout-btn" style="background:none;border:none;cursor:pointer;padding:6px;display:flex;align-items:center;justify-content:center;" title="Keluar">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.85)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>
+          <polyline points="16 17 21 12 16 7"/>
+          <line x1="21" y1="12" x2="9" y2="12"/>
+        </svg>
+      </button>
     </div>
   </header>
   <div class="app-content">${DASHBOARD_INNER_HTML}</div>
@@ -168,7 +175,7 @@ const DASHBOARD_HTML = `
     </a>
     <a href="#/history" class="bottom-nav-item">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-      Riwayat
+      Rekam
     </a>
     <!-- Tombol Scan Tengah -->
     <div class="bottom-nav-scan-wrap">
@@ -188,15 +195,11 @@ const DASHBOARD_HTML = `
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
       Konsultasi
     </a>
-    <button id="logout-btn" class="bottom-nav-item" style="background:none;border:none;cursor:pointer;">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-      Keluar
-    </button>
   </nav>
 
   <!-- Bottom Sheet Hasil Scan -->
-  <div id="scan-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:300;" ></div>
-  <div id="scan-sheet" style="display:none;position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:var(--max-w);background:var(--surface);border-radius:20px 20px 0 0;z-index:301;padding:20px 20px 32px;box-shadow:0 -4px 24px rgba(0,0,0,0.12);transition:transform 0.3s ease;">
+  <div id="scan-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:300;"></div>
+  <div id="scan-sheet" style="display:none;position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:var(--max-w);background:var(--surface);border-radius:20px 20px 0 0;z-index:301;padding:20px 20px 32px;box-shadow:0 -4px 24px rgba(0,0,0,0.12);">
     <div style="width:40px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 16px;"></div>
     <div id="scan-sheet-content"></div>
   </div>
