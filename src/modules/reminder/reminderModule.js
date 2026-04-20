@@ -10,26 +10,26 @@ const _scheduledTimeouts = {};
 // ── Rekomendasi obat berdasarkan penyakit ────────────────────
 const DRUG_RECOMMENDATIONS = {
   hypertension: [
-    { name: 'Amlodipine 5mg', dose: '1x sehari', note: 'Diminum pagi hari' },
-    { name: 'Lisinopril 10mg', dose: '1x sehari', note: 'Pantau tekanan darah' },
+    { name: 'Amlodipine 5mg', dose: '1x sehari', note: 'Diminum pagi hari setelah sarapan. Obat ini bekerja melebarkan pembuluh darah untuk menurunkan tekanan darah.' },
+    { name: 'Lisinopril 10mg', dose: '1x sehari', note: 'Diminum pagi hari. Pantau tekanan darah secara rutin. Hindari konsumsi suplemen kalium tanpa anjuran dokter.' },
   ],
   diabetes: [
-    { name: 'Metformin 500mg', dose: '2x sehari', note: 'Diminum setelah makan' },
-    { name: 'Glibenclamide 5mg', dose: '1x sehari', note: 'Diminum sebelum makan pagi' },
+    { name: 'Metformin 500mg', dose: '2x sehari', note: 'Diminum sesaat setelah makan pagi dan malam untuk mengurangi efek mual. Obat ini membantu mengontrol kadar gula darah.' },
+    { name: 'Glibenclamide 5mg', dose: '1x sehari', note: 'Diminum 30 menit sebelum makan pagi. Segera makan setelah minum obat ini untuk mencegah hipoglikemia (gula darah terlalu rendah).' },
   ],
   heartDisease: [
-    { name: 'Aspirin 80mg', dose: '1x sehari', note: 'Diminum setelah makan' },
-    { name: 'Bisoprolol 5mg', dose: '1x sehari', note: 'Diminum pagi hari' },
+    { name: 'Aspirin 80mg', dose: '1x sehari', note: 'Diminum setelah makan untuk melindungi lambung. Berfungsi sebagai pengencer darah untuk mencegah penggumpalan.' },
+    { name: 'Bisoprolol 5mg', dose: '1x sehari', note: 'Diminum pagi hari pada waktu yang sama setiap hari. Jangan menghentikan obat ini secara tiba-tiba tanpa konsultasi dokter.' },
   ],
   stroke: [
-    { name: 'Clopidogrel 75mg', dose: '1x sehari', note: 'Diminum pagi hari' },
-    { name: 'Atorvastatin 20mg', dose: '1x sehari', note: 'Diminum malam hari' },
+    { name: 'Clopidogrel 75mg', dose: '1x sehari', note: 'Diminum pagi hari dengan atau tanpa makanan. Berfungsi mencegah penggumpalan darah yang dapat memicu stroke berulang.' },
+    { name: 'Atorvastatin 20mg', dose: '1x sehari', note: 'Diminum malam hari karena kolesterol diproduksi tubuh saat tidur. Hindari konsumsi jus jeruk bali selama pengobatan.' },
   ],
   kidneyDisease: [
-    { name: 'Furosemide 40mg', dose: '1x sehari', note: 'Diminum pagi hari' },
+    { name: 'Furosemide 40mg', dose: '1x sehari', note: 'Diminum pagi hari untuk menghindari buang air kecil di malam hari. Obat ini membantu mengeluarkan kelebihan cairan dari tubuh.' },
   ],
   obesity: [
-    { name: 'Vitamin D3 1000IU', dose: '1x sehari', note: 'Diminum bersama makanan' },
+    { name: 'Vitamin D3 1000IU', dose: '1x sehari', note: 'Diminum bersama makanan berlemak sehat (seperti alpukat atau kacang) agar penyerapan optimal. Defisiensi Vitamin D umum terjadi pada obesitas.' },
   ],
 };
 
@@ -168,7 +168,8 @@ export function render(container) {
             <div style="width:44px;height:44px;background:white;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,0.08);">${c.icon}</div>
             <div style="flex:1;min-width:0;">
               <div style="font-size:0.85rem;font-weight:700;color:#1e293b;margin-bottom:2px;">${r.name}</div>
-              <div style="font-size:0.72rem;color:#64748b;margin-bottom:5px;">${r.dose} &nbsp;·&nbsp; ${r.note}</div>
+              <div style="font-size:0.72rem;color:#64748b;margin-bottom:5px;font-weight:600;">${r.dose}</div>
+              <div style="font-size:0.72rem;color:#475569;line-height:1.5;margin-bottom:6px;">${r.note}</div>
               <span style="font-size:0.65rem;font-weight:600;background:white;color:${c.text};padding:3px 9px;border-radius:20px;border:1px solid ${c.border};">${r.disease}</span>
             </div>
             <button class="add-reco-btn" data-name="${r.name}" data-dose="${r.dose}" style="flex-shrink:0;background:${c.text};color:white;border:none;border-radius:10px;padding:8px 12px;font-size:0.72rem;font-weight:600;cursor:pointer;white-space:nowrap;">Set<br>Pengingat</button>
