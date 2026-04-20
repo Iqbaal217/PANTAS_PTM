@@ -142,34 +142,44 @@ export function render(container) {
     }
   });
 
+  const DISEASE_COLORS = {
+    hypertension: { bg: '#fef2f2', border: '#fca5a5', text: '#dc2626', icon: '❤️' },
+    diabetes:     { bg: '#fff7ed', border: '#fdba74', text: '#ea580c', icon: '🩸' },
+    heartDisease: { bg: '#fdf2f8', border: '#f0abfc', text: '#a21caf', icon: '💓' },
+    stroke:       { bg: '#f0fdf4', border: '#86efac', text: '#16a34a', icon: '🧠' },
+    kidneyDisease:{ bg: '#eff6ff', border: '#93c5fd', text: '#2563eb', icon: '🫘' },
+    obesity:      { bg: '#fefce8', border: '#fde047', text: '#ca8a04', icon: '⚖️' },
+  };
+
   const recoHTML = recommendations.length ? `
-    <!-- Banner daftar obat yang perlu diminum -->
-    <div style="background:linear-gradient(135deg,#eff6ff,#dbeafe);border:1px solid rgba(37,99,235,0.2);border-radius:var(--radius-lg);padding:14px 16px;margin-bottom:20px;">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
-        <span style="font-size:1.2rem;">💊</span>
+    <div style="margin-bottom:20px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+        <span style="font-size:1.3rem;">💊</span>
         <div>
-          <div style="font-size:0.88rem;font-weight:700;color:var(--blue);">Daftar Obat yang Perlu Diminum</div>
-          <div style="font-size:0.72rem;color:var(--text-3);margin-top:1px;">Berdasarkan penyakit PTM Anda di rekam medis</div>
+          <div style="font-size:0.92rem;font-weight:700;color:var(--text);">Daftar Obat yang Perlu Diminum</div>
+          <div style="font-size:0.72rem;color:var(--text-3);">Sesuai penyakit PTM Anda</div>
         </div>
       </div>
-      <div style="display:flex;flex-direction:column;gap:8px;">
-        ${recommendations.map(r => `
-          <div style="background:white;border:1px solid rgba(37,99,235,0.15);border-radius:var(--radius);padding:10px 12px;display:flex;align-items:center;justify-content:space-between;gap:10px;">
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        ${recommendations.map(r => {
+          const c = DISEASE_COLORS[Object.keys(DISEASE_LABELS).find(k => DISEASE_LABELS[k] === r.disease)] || { bg:'var(--surface-2)', border:'var(--border)', text:'var(--blue)', icon:'💊' };
+          return `
+          <div style="background:${c.bg};border:1.5px solid ${c.border};border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:12px;">
+            <div style="width:44px;height:44px;background:white;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,0.08);">${c.icon}</div>
             <div style="flex:1;min-width:0;">
-              <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-                <span style="font-size:0.82rem;font-weight:600;color:var(--text);">${r.name}</span>
-                <span style="font-size:0.62rem;background:var(--blue-soft);color:var(--blue);padding:2px 7px;border-radius:var(--radius-full);white-space:nowrap;">${r.disease}</span>
-              </div>
-              <div style="font-size:0.72rem;color:var(--text-3);margin-top:3px;">📋 ${r.dose} &nbsp;·&nbsp; ⏰ ${r.note}</div>
+              <div style="font-size:0.85rem;font-weight:700;color:#1e293b;margin-bottom:2px;">${r.name}</div>
+              <div style="font-size:0.72rem;color:#64748b;margin-bottom:5px;">${r.dose} &nbsp;·&nbsp; ${r.note}</div>
+              <span style="font-size:0.65rem;font-weight:600;background:white;color:${c.text};padding:3px 9px;border-radius:20px;border:1px solid ${c.border};">${r.disease}</span>
             </div>
-            <button class="btn btn-sm add-reco-btn" data-name="${r.name}" data-dose="${r.dose}" style="flex-shrink:0;background:var(--blue);color:white;border-radius:9px;font-size:0.7rem;padding:6px 10px;white-space:nowrap;">+ Set Pengingat</button>
-          </div>`).join('')}
+            <button class="add-reco-btn" data-name="${r.name}" data-dose="${r.dose}" style="flex-shrink:0;background:${c.text};color:white;border:none;border-radius:10px;padding:8px 12px;font-size:0.72rem;font-weight:600;cursor:pointer;white-space:nowrap;">Set<br>Pengingat</button>
+          </div>`;
+        }).join('')}
       </div>
     </div>` : `
-    <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px 16px;margin-bottom:20px;text-align:center;">
-      <div style="font-size:1.5rem;margin-bottom:6px;">💊</div>
-      <div style="font-size:0.82rem;font-weight:600;color:var(--text-2);margin-bottom:4px;">Belum ada rekomendasi obat</div>
-      <div style="font-size:0.75rem;color:var(--text-3);">Lengkapi rekam medis Anda untuk mendapatkan rekomendasi obat sesuai penyakit PTM</div>
+    <div style="background:var(--surface-2);border:1px dashed var(--border);border-radius:14px;padding:20px 16px;margin-bottom:20px;text-align:center;">
+      <div style="font-size:2rem;margin-bottom:8px;">💊</div>
+      <div style="font-size:0.85rem;font-weight:600;color:var(--text-2);margin-bottom:4px;">Belum ada rekomendasi obat</div>
+      <div style="font-size:0.75rem;color:var(--text-3);">Lengkapi rekam medis untuk mendapatkan rekomendasi obat sesuai penyakit PTM Anda</div>
     </div>`;
 
   const activeReminders = getActiveReminders();
