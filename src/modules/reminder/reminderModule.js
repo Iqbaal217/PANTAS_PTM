@@ -10,23 +10,23 @@ const _scheduledTimeouts = {};
 // ── Rekomendasi obat berdasarkan penyakit ────────────────────
 const DRUG_RECOMMENDATIONS = {
   hypertension: [
-    { name: 'Amlodipine 5mg', dose: '1x sehari', note: 'Diminum pagi hari setelah sarapan. Obat ini bekerja melebarkan pembuluh darah untuk menurunkan tekanan darah.' },
-    { name: 'Lisinopril 10mg', dose: '1x sehari', note: 'Diminum pagi hari. Pantau tekanan darah secara rutin. Hindari konsumsi suplemen kalium tanpa anjuran dokter.' },
+    { name: 'Amlodipine 5mg',   dose: '1x sehari', note: 'Diminum setelah makan pagi' },
+    { name: 'Lisinopril 10mg',  dose: '1x sehari', note: 'Diminum setelah makan pagi' },
   ],
   diabetes: [
-    { name: 'Metformin 500mg', dose: '2x sehari', note: 'Diminum sesaat setelah makan pagi dan malam untuk mengurangi efek mual. Obat ini membantu mengontrol kadar gula darah.' },
-    { name: 'Glibenclamide 5mg', dose: '1x sehari', note: 'Diminum 30 menit sebelum makan pagi. Segera makan setelah minum obat ini untuk mencegah hipoglikemia (gula darah terlalu rendah).' },
+    { name: 'Metformin 500mg',    dose: '2x sehari', note: 'Diminum setelah makan pagi dan malam' },
+    { name: 'Glibenclamide 5mg',  dose: '1x sehari', note: 'Diminum 30 menit sebelum makan pagi' },
   ],
   heartDisease: [
-    { name: 'Aspirin 80mg', dose: '1x sehari', note: 'Diminum setelah makan untuk melindungi lambung. Berfungsi sebagai pengencer darah untuk mencegah penggumpalan.' },
-    { name: 'Bisoprolol 5mg', dose: '1x sehari', note: 'Diminum pagi hari pada waktu yang sama setiap hari. Jangan menghentikan obat ini secara tiba-tiba tanpa konsultasi dokter.' },
+    { name: 'Aspirin 80mg',    dose: '1x sehari', note: 'Diminum setelah makan' },
+    { name: 'Bisoprolol 5mg',  dose: '1x sehari', note: 'Diminum setelah makan pagi' },
   ],
   stroke: [
-    { name: 'Clopidogrel 75mg', dose: '1x sehari', note: 'Diminum pagi hari dengan atau tanpa makanan. Berfungsi mencegah penggumpalan darah yang dapat memicu stroke berulang.' },
-    { name: 'Atorvastatin 20mg', dose: '1x sehari', note: 'Diminum malam hari karena kolesterol diproduksi tubuh saat tidur. Hindari konsumsi jus jeruk bali selama pengobatan.' },
+    { name: 'Clopidogrel 75mg',   dose: '1x sehari', note: 'Diminum setelah makan pagi' },
+    { name: 'Atorvastatin 20mg',  dose: '1x sehari', note: 'Diminum setelah makan malam' },
   ],
   kidneyDisease: [
-    { name: 'Furosemide 40mg', dose: '1x sehari', note: 'Diminum pagi hari untuk menghindari buang air kecil di malam hari. Obat ini membantu mengeluarkan kelebihan cairan dari tubuh.' },
+    { name: 'Furosemide 40mg', dose: '1x sehari', note: 'Diminum setelah makan pagi' },
   ],
   obesity: [
     { name: 'Vitamin D3 1000IU', dose: '1x sehari', note: 'Diminum setelah makan' },
