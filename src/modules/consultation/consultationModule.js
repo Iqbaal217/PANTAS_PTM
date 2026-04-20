@@ -152,50 +152,44 @@ export function render(container) {
 
   const innerHTML = `
     ${recoHTML}
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-      <div style="font-size:0.9rem;font-weight:700;color:var(--text);">📅 Jadwal Mendatang</div>
-      <button id="open-con-sheet" style="display:flex;align-items:center;gap:6px;background:var(--blue);color:white;border:none;border-radius:20px;padding:7px 14px;font-size:0.78rem;font-weight:600;cursor:pointer;">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        Buat Jadwal
-      </button>
-    </div>
+    <div style="font-size:0.9rem;font-weight:700;color:var(--text);margin-bottom:12px;">📅 Jadwal Mendatang</div>
     ${scheduleHTML}
 
-    <!-- Overlay + Bottom Sheet -->
-    <div id="con-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:300;"></div>
-    <div id="con-sheet" style="display:none;position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:var(--max-w);background:var(--surface);border-radius:20px 20px 0 0;z-index:301;padding:20px 20px 36px;box-shadow:0 -4px 24px rgba(0,0,0,0.12);">
-      <div style="width:40px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 18px;"></div>
-      <div style="font-size:1rem;font-weight:700;color:var(--text);margin-bottom:16px;">🩺 Buat Jadwal Konsultasi</div>
+    <!-- Form jadwal langsung di halaman -->
+    <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;margin-top:8px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+        <div style="width:32px;height:32px;background:var(--blue-soft);border-radius:50%;display:flex;align-items:center;justify-content:center;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </div>
+        <div style="font-size:0.88rem;font-weight:700;color:var(--text);">Buat Jadwal Konsultasi</div>
+      </div>
       <div class="form-group">
         <label>Nama Dokter</label>
-        <input type="text" id="con-doctor" placeholder="Contoh: dr. Budi Santoso" style="font-size:0.9rem;" />
+        <input type="text" id="con-doctor" placeholder="Contoh: dr. Budi Santoso" />
       </div>
       <div class="form-group">
         <label>Spesialisasi</label>
-        <input type="text" id="con-spec" placeholder="Contoh: Kardiolog" style="font-size:0.9rem;" />
+        <input type="text" id="con-spec" placeholder="Contoh: Kardiolog" />
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
         <div class="form-group">
           <label>Tanggal</label>
-          <input type="date" id="con-date" min="${today}" style="font-size:0.9rem;" />
+          <input type="date" id="con-date" min="${today}" />
         </div>
         <div class="form-group">
           <label>Jam</label>
-          <input type="time" id="con-time" value="09:00" style="font-size:0.9rem;" />
+          <input type="time" id="con-time" value="09:00" />
         </div>
       </div>
       <div class="form-group">
         <label>Metode</label>
-        <select id="con-method" style="font-size:0.9rem;">
+        <select id="con-method">
           <option value="offline">Tatap Muka</option>
           <option value="online">Online / Telemedicine</option>
         </select>
       </div>
-      <div id="con-msg" style="font-size:0.78rem;margin-bottom:10px;"></div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-        <button id="con-cancel-btn" class="btn" style="width:100%;">Batal</button>
-        <button id="con-add-btn" class="btn btn-primary" style="width:100%;">Simpan</button>
-      </div>
+      <div id="con-msg" style="font-size:0.78rem;margin-bottom:8px;"></div>
+      <button id="con-add-btn" class="btn btn-primary" style="width:100%;">💾 Simpan Jadwal</button>
     </div>`;
 
   if (isDesktop) {
@@ -217,23 +211,10 @@ export function render(container) {
   // Pilih spesialis dari rekomendasi
   container.querySelectorAll('.use-specialist-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-      _openConSheet(container);
       container.querySelector('#con-spec').value = btn.dataset.name;
+      container.querySelector('#con-spec').scrollIntoView({ behavior: 'smooth' });
     });
   });
-
-  function _openConSheet(c) {
-    c.querySelector('#con-overlay').style.display = 'block';
-    c.querySelector('#con-sheet').style.display = 'block';
-  }
-  function _closeConSheet(c) {
-    c.querySelector('#con-overlay').style.display = 'none';
-    c.querySelector('#con-sheet').style.display = 'none';
-  }
-
-  container.querySelector('#open-con-sheet')?.addEventListener('click', () => _openConSheet(container));
-  container.querySelector('#con-overlay')?.addEventListener('click', () => _closeConSheet(container));
-  container.querySelector('#con-cancel-btn')?.addEventListener('click', () => _closeConSheet(container));
 
   // Batalkan jadwal
   container.querySelectorAll('.cancel-btn').forEach(btn => {
