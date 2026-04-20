@@ -1,224 +1,115 @@
 /**
- * Reminder_Module — Pengingat minum obat dengan notifikasi push
- * Menyimpan data di localStorage dengan key 'pantas_reminders'
+ * Reminder_Module — Pengingat minum obat + rekomendasi berdasarkan PTM
  */
+
+import { getProfile } from '../user-profile/userProfile.js';
 
 const STORAGE_KEY = 'pantas_reminders';
-
-// Internal map: reminderId → array of timeoutIds
 const _scheduledTimeouts = {};
 
-// ─── Internal store helpers ─────────────────────────────────────────────────
+// ── Rekomendasi obat berdasarkan penyakit ────────────────────
+const DRUG_RECOMMENDATIONS = {
+  hypertension: [
+    { name: 'Amlodipine 5mg', dose: '1x sehari', note: 'Diminum pagi hari' },
+    { name: 'Lisinopril 10mg', dose: '1x sehari', note: 'Pantau tekanan darah' },
+  ],
+  diabetes: [
+    { name: 'Metformin 500mg', dose: '2x sehari', note: 'Diminum setelah makan' },
+    { name: 'Glibenclamide 5mg', dose: '1x sehari', note: 'Diminum sebelum makan pagi' },
+  ],
+  heartDisease: [
+    { name: 'Aspirin 80mg', dose: '1x sehari', note: 'Diminum setelah makan' },
+    { name: 'Bisoprolol 5mg', dose: '1x sehari', note: 'Diminum pagi hari' },
+  ],
+  stroke: [
+    { name: 'Clopidogrel 75mg', dose: '1x sehari', note: 'Diminum pagi hari' },
+    { name: 'Atorvastatin 20mg', dose: '1x sehari', note: 'Diminum malam hari' },
+  ],
+  kidneyDisease: [
+    { name: 'Furosemide 40mg', dose: '1x sehari', note: 'Diminum pagi hari' },
+  ],
+  obesity: [
+    { name: 'Vitamin D3 1000IU', dose: '1x sehari', note: 'Diminum bersama makanan' },
+  ],
+};
 
-/**
- * Ambil array pengingat dari localStorage
- * @returns {Array} array of MedicationReminder
- */
+const DISEASE_LABELS = {
+  hypertension: 'Hipertensi',
+  diabetes: 'Diabetes',
+  heartDisease: 'Penyakit Jantung',
+  stroke: 'Stroke',
+  kidneyDisease: 'Penyakit Ginjal',
+  obesity: 'Obesitas',
+};
+
+// ── Store helpers ────────────────────────────────────────────
 export function _getStore() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    return JSON.parse(raw);
-  } catch {
-    return [];
-  }
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch { return []; }
 }
+export function _setStore(data) { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
 
-/**
- * Simpan array pengingat ke localStorage
- * @param {Array} data array of MedicationReminder
- */
-export function _setStore(data) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-}
-
-// ─── Notification helper ────────────────────────────────────────────────────
-
-/**
- * Kirim notifikasi (Notification API atau console.log sebagai fallback)
- * @param {string} title
- * @param {string} body
- */
+// ── Notification ─────────────────────────────────────────────
 function sendNotification(title, body) {
   if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
     new Notification(title, { body });
-  } else {
-    console.log(`[PANTAS Reminder] ${title}: ${body}`);
   }
 }
 
-// ─── scheduleNotification ───────────────────────────────────────────────────
-
-/**
- * Jadwalkan notifikasi untuk setiap scheduledTime dalam reminder.
- * Setelah notifikasi dikirim, set re-notification 30 menit kemudian
- * jika lastStatus masih 'pending'.
- * @param {Object} reminder MedicationReminder
- */
 export function scheduleNotification(reminder) {
   if (!reminder || !Array.isArray(reminder.scheduledTimes)) return;
-
-  if (!_scheduledTimeouts[reminder.id]) {
-    _scheduledTimeouts[reminder.id] = [];
-  }
-
+  if (!_scheduledTimeouts[reminder.id]) _scheduledTimeouts[reminder.id] = [];
   for (const timeStr of reminder.scheduledTimes) {
     const msUntil = _msUntilNextOccurrence(timeStr);
-
-    const mainTimeoutId = setTimeout(() => {
-      // Ambil status terkini dari store
-      const store = _getStore();
-      const current = store.find((r) => r.id === reminder.id);
-      if (!current || !current.isActive) return;
-
-      sendNotification(
-        `Waktunya minum obat: ${reminder.medicationName}`,
-        `Dosis: ${reminder.dosage}`
-      );
-
-      // Re-notification setelah 30 menit jika masih 'pending'
-      const reNotifyId = setTimeout(() => {
-        const storeNow = _getStore();
-        const latest = storeNow.find((r) => r.id === reminder.id);
-        if (latest && latest.isActive && (!latest.lastStatus || latest.lastStatus === 'pending')) {
-          sendNotification(
-            `Pengingat ulang: ${reminder.medicationName}`,
-            `Anda belum menandai obat ini. Dosis: ${reminder.dosage}`
-          );
-        }
-      }, 30 * 60 * 1000);
-
-      _scheduledTimeouts[reminder.id].push(reNotifyId);
+    const id = setTimeout(() => {
+      const cur = _getStore().find(r => r.id === reminder.id);
+      if (!cur?.isActive) return;
+      sendNotification(`Waktunya minum: ${reminder.medicationName}`, `Dosis: ${reminder.dosage}`);
     }, msUntil);
-
-    _scheduledTimeouts[reminder.id].push(mainTimeoutId);
+    _scheduledTimeouts[reminder.id].push(id);
   }
 }
 
-/**
- * Hitung milidetik hingga kemunculan berikutnya dari waktu "HH:MM"
- * @param {string} timeStr format "HH:MM"
- * @returns {number} ms until next occurrence
- */
 export function _msUntilNextOccurrence(timeStr) {
-  const [hours, minutes] = timeStr.split(':').map(Number);
-  const now = new Date();
-  const target = new Date(now);
-  target.setHours(hours, minutes, 0, 0);
-
-  if (target <= now) {
-    // Sudah lewat hari ini, jadwalkan untuk besok
-    target.setDate(target.getDate() + 1);
-  }
-
+  const [h, m] = timeStr.split(':').map(Number);
+  const now = new Date(), target = new Date(now);
+  target.setHours(h, m, 0, 0);
+  if (target <= now) target.setDate(target.getDate() + 1);
   return target.getTime() - now.getTime();
 }
 
-// ─── cancelNotification ─────────────────────────────────────────────────────
-
-/**
- * Batalkan semua timeout yang dijadwalkan untuk reminderId
- * @param {string} reminderId
- */
 export function cancelNotification(reminderId) {
-  const timeouts = _scheduledTimeouts[reminderId];
-  if (timeouts) {
-    for (const id of timeouts) {
-      clearTimeout(id);
-    }
-    delete _scheduledTimeouts[reminderId];
-  }
+  (_scheduledTimeouts[reminderId] || []).forEach(clearTimeout);
+  delete _scheduledTimeouts[reminderId];
 }
 
-// ─── CRUD Functions ─────────────────────────────────────────────────────────
-
-/**
- * Tambah pengingat baru ke store dan jadwalkan notifikasi
- * @param {Object} reminder MedicationReminder
- */
+// ── CRUD ─────────────────────────────────────────────────────
 export async function addReminder(reminder) {
   const store = _getStore();
-  const newReminder = {
-    ...reminder,
-    isActive: reminder.isActive !== undefined ? reminder.isActive : true,
-    lastStatus: reminder.lastStatus || 'pending',
-  };
-  store.push(newReminder);
+  const r = { ...reminder, isActive: true, lastStatus: 'pending' };
+  store.push(r);
   _setStore(store);
-  scheduleNotification(newReminder);
+  scheduleNotification(r);
 }
 
-/**
- * Nonaktifkan pengingat (set isActive: false) dan batalkan notifikasi.
- * Data tetap tersimpan untuk riwayat.
- * @param {string} reminderId
- */
-export async function removeReminder(reminderId) {
+export async function removeReminder(id) {
   const store = _getStore();
-  const idx = store.findIndex((r) => r.id === reminderId);
-  if (idx !== -1) {
-    store[idx] = { ...store[idx], isActive: false };
-    _setStore(store);
-  }
-  cancelNotification(reminderId);
+  const idx = store.findIndex(r => r.id === id);
+  if (idx !== -1) { store[idx].isActive = false; _setStore(store); }
+  cancelNotification(id);
 }
 
-/**
- * Tandai pengingat dengan status 'taken' atau 'skipped'
- * @param {string} reminderId
- * @param {'taken'|'skipped'} status
- */
-export async function markReminder(reminderId, status) {
+export async function markReminder(id, status) {
   const store = _getStore();
-  const idx = store.findIndex((r) => r.id === reminderId);
-  if (idx !== -1) {
-    store[idx] = { ...store[idx], lastStatus: status };
-    _setStore(store);
-  }
+  const idx = store.findIndex(r => r.id === id);
+  if (idx !== -1) { store[idx].lastStatus = status; _setStore(store); }
 }
 
-/**
- * Ambil semua pengingat yang aktif (isActive === true)
- * @returns {Array} array of active MedicationReminder
- */
 export function getActiveReminders() {
-  return _getStore().filter((r) => r.isActive === true);
+  return _getStore().filter(r => r.isActive === true);
 }
 
-// ─── SPA render function ─────────────────────────────────────────────────────
-
-/**
- * Render halaman pengingat obat ke dalam container.
- * @param {HTMLElement} container
- */
-export function render(container) {
-  const isDesktop = window.innerWidth >= 900;
-  if (isDesktop) {
-    container.innerHTML = `
-      <div class="placeholder-page">
-        <div class="placeholder-icon">💊</div>
-        <div class="placeholder-title">Pengingat Obat</div>
-        <div class="placeholder-desc">Fitur pengingat jadwal minum obat akan tersedia di sini. Tambahkan, kelola, dan terima notifikasi pengingat obat Anda.</div>
-      </div>`;
-    return;
-  }
-  container.innerHTML = `
-<div class="app-shell">
-  <header class="app-header">
-    <div class="app-header-brand">
-      <div class="app-header-logo">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-      </div>
-      <span class="app-header-title">PANTAS</span>
-    </div>
-  </header>
-  <div class="app-content">
-    <div class="placeholder-page">
-      <div class="placeholder-icon">💊</div>
-      <div class="placeholder-title">Pengingat Obat</div>
-      <div class="placeholder-desc">Fitur pengingat jadwal minum obat akan tersedia di sini. Tambahkan, kelola, dan terima notifikasi pengingat obat Anda.</div>
-    </div>
-  </div>
+// ── Render ───────────────────────────────────────────────────
+const BOTTOM_NAV = `
   <nav class="bottom-nav">
     <a href="#/dashboard" class="bottom-nav-item">
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22" fill="none" stroke="currentColor" stroke-width="2"/></svg>
@@ -226,7 +117,7 @@ export function render(container) {
     </a>
     <a href="#/history" class="bottom-nav-item">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-      Riwayat
+      Rekam
     </a>
     <a href="#/reminders" class="bottom-nav-item active">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
@@ -236,6 +127,130 @@ export function render(container) {
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
       Konsultasi
     </a>
-  </nav>
+  </nav>`;
+
+export function render(container) {
+  const isDesktop = window.innerWidth >= 900;
+  const profile = getProfile();
+  const ph = profile.personalHistory || {};
+
+  // Kumpulkan rekomendasi berdasarkan penyakit yang dimiliki
+  const recommendations = [];
+  Object.entries(DRUG_RECOMMENDATIONS).forEach(([key, drugs]) => {
+    if (ph[key]) {
+      drugs.forEach(d => recommendations.push({ ...d, disease: DISEASE_LABELS[key] }));
+    }
+  });
+
+  const recoHTML = recommendations.length ? `
+    <div style="font-size:0.9rem;font-weight:700;color:var(--text);margin-bottom:6px;">💊 Rekomendasi Obat</div>
+    <div style="font-size:0.75rem;color:var(--text-3);margin-bottom:12px;">Berdasarkan riwayat penyakit Anda di rekam medis</div>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;">
+      ${recommendations.map(r => `
+        <div style="background:var(--surface-2);border:1px solid var(--border);border-left:3px solid var(--blue);border-radius:var(--radius);padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px;">
+          <div>
+            <div style="font-size:0.82rem;font-weight:600;color:var(--text);">${r.name}</div>
+            <div style="font-size:0.72rem;color:var(--text-3);margin-top:2px;">${r.dose} · ${r.note}</div>
+            <span style="font-size:0.65rem;background:var(--blue-soft);color:var(--blue);padding:2px 7px;border-radius:var(--radius-full);margin-top:4px;display:inline-block;">${r.disease}</span>
+          </div>
+          <button class="btn btn-sm add-reco-btn" data-name="${r.name}" data-dose="${r.dose}" style="flex-shrink:0;background:var(--blue);color:white;border-radius:9px;font-size:0.7rem;padding:6px 10px;">+ Tambah</button>
+        </div>`).join('')}
+    </div>` : '';
+
+  const activeReminders = getActiveReminders();
+  const remindersHTML = activeReminders.length ? `
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;">
+      ${activeReminders.map(r => `
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+            <div style="font-size:0.85rem;font-weight:600;color:var(--text);">${r.medicationName}</div>
+            <button class="remove-btn btn btn-sm" data-id="${r.id}" style="background:var(--red-soft);color:var(--red);border-radius:8px;font-size:0.68rem;padding:4px 8px;">Hapus</button>
+          </div>
+          <div style="font-size:0.75rem;color:var(--text-3);">${r.dosage} · ${(r.scheduledTimes||[]).join(', ')}</div>
+          <div style="display:flex;gap:6px;margin-top:8px;">
+            <button class="mark-btn btn btn-sm" data-id="${r.id}" data-status="taken" style="flex:1;background:#f0fdf4;color:var(--green);border-radius:8px;font-size:0.72rem;">✓ Sudah diminum</button>
+            <button class="mark-btn btn btn-sm" data-id="${r.id}" data-status="skipped" style="flex:1;background:var(--surface-2);color:var(--text-3);border-radius:8px;font-size:0.72rem;">Lewati</button>
+          </div>
+        </div>`).join('')}
+    </div>` : `<div style="text-align:center;padding:20px 0;font-size:0.82rem;color:var(--text-3);">Belum ada pengingat aktif</div>`;
+
+  const innerHTML = `
+    ${recoHTML}
+    <div style="font-size:0.9rem;font-weight:700;color:var(--text);margin-bottom:12px;">⏰ Pengingat Aktif</div>
+    ${remindersHTML}
+    <!-- Form tambah pengingat -->
+    <div style="font-size:0.9rem;font-weight:700;color:var(--text);margin-bottom:12px;">+ Tambah Pengingat</div>
+    <div class="form-group">
+      <label>Nama Obat</label>
+      <input type="text" id="rem-name" placeholder="Contoh: Amlodipine 5mg" />
+    </div>
+    <div class="form-group">
+      <label>Dosis</label>
+      <input type="text" id="rem-dose" placeholder="Contoh: 1 tablet" />
+    </div>
+    <div class="form-group">
+      <label>Jam Minum</label>
+      <input type="time" id="rem-time" value="08:00" />
+    </div>
+    <div id="rem-msg" style="font-size:0.78rem;margin-bottom:8px;"></div>
+    <button id="rem-add-btn" class="btn btn-primary" style="width:100%;">Tambah Pengingat</button>`;
+
+  if (isDesktop) {
+    container.innerHTML = `<div style="max-width:600px;margin:0 auto;">${innerHTML}</div>`;
+  } else {
+    container.innerHTML = `
+<div class="app-shell">
+  <header class="app-header">
+    <div class="app-header-brand">
+      <div class="app-header-logo"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+      <span class="app-header-title">Pengingat Obat</span>
+    </div>
+  </header>
+  <div class="app-content">${innerHTML}</div>
+  ${BOTTOM_NAV}
 </div>`;
+  }
+
+  // Tambah dari rekomendasi
+  container.querySelectorAll('.add-reco-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      container.querySelector('#rem-name').value = btn.dataset.name;
+      container.querySelector('#rem-dose').value = btn.dataset.dose;
+      container.querySelector('#rem-name').scrollIntoView({ behavior: 'smooth' });
+    });
+  });
+
+  // Hapus pengingat
+  container.querySelectorAll('.remove-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      await removeReminder(btn.dataset.id);
+      render(container);
+    });
+  });
+
+  // Tandai status
+  container.querySelectorAll('.mark-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      await markReminder(btn.dataset.id, btn.dataset.status);
+      render(container);
+    });
+  });
+
+  // Tambah pengingat baru
+  container.querySelector('#rem-add-btn')?.addEventListener('click', async () => {
+    const name = container.querySelector('#rem-name')?.value?.trim();
+    const dose = container.querySelector('#rem-dose')?.value?.trim();
+    const time = container.querySelector('#rem-time')?.value;
+    const msgEl = container.querySelector('#rem-msg');
+    if (!name || !dose || !time) {
+      msgEl.style.color = 'var(--red)'; msgEl.textContent = 'Harap lengkapi semua field.'; return;
+    }
+    await addReminder({
+      id: `rem-${Date.now()}`,
+      medicationName: name,
+      dosage: dose,
+      scheduledTimes: [time],
+    });
+    render(container);
+  });
 }
