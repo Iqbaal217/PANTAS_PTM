@@ -176,24 +176,38 @@ export function render(container) {
 
   const innerHTML = `
     ${recoHTML}
-    <div style="font-size:0.9rem;font-weight:700;color:var(--text);margin-bottom:12px;">⏰ Pengingat Aktif</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+      <div style="font-size:0.9rem;font-weight:700;color:var(--text);">⏰ Pengingat Aktif</div>
+      <button id="open-add-sheet" style="display:flex;align-items:center;gap:6px;background:var(--blue);color:white;border:none;border-radius:20px;padding:7px 14px;font-size:0.78rem;font-weight:600;cursor:pointer;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Tambah
+      </button>
+    </div>
     ${remindersHTML}
-    <!-- Form tambah pengingat -->
-    <div style="font-size:0.9rem;font-weight:700;color:var(--text);margin-bottom:12px;">+ Tambah Pengingat</div>
-    <div class="form-group">
-      <label>Nama Obat</label>
-      <input type="text" id="rem-name" placeholder="Contoh: Amlodipine 5mg" />
-    </div>
-    <div class="form-group">
-      <label>Dosis</label>
-      <input type="text" id="rem-dose" placeholder="Contoh: 1 tablet" />
-    </div>
-    <div class="form-group">
-      <label>Jam Minum</label>
-      <input type="time" id="rem-time" value="08:00" />
-    </div>
-    <div id="rem-msg" style="font-size:0.78rem;margin-bottom:8px;"></div>
-    <button id="rem-add-btn" class="btn btn-primary" style="width:100%;">Tambah Pengingat</button>`;
+
+    <!-- Overlay + Bottom Sheet -->
+    <div id="rem-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:300;"></div>
+    <div id="rem-sheet" style="display:none;position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:var(--max-w);background:var(--surface);border-radius:20px 20px 0 0;z-index:301;padding:20px 20px 36px;box-shadow:0 -4px 24px rgba(0,0,0,0.12);">
+      <div style="width:40px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 18px;"></div>
+      <div style="font-size:1rem;font-weight:700;color:var(--text);margin-bottom:16px;">💊 Tambah Pengingat Obat</div>
+      <div class="form-group">
+        <label>Nama Obat</label>
+        <input type="text" id="rem-name" placeholder="Contoh: Amlodipine 5mg" style="font-size:0.9rem;" />
+      </div>
+      <div class="form-group">
+        <label>Dosis</label>
+        <input type="text" id="rem-dose" placeholder="Contoh: 1 tablet" style="font-size:0.9rem;" />
+      </div>
+      <div class="form-group">
+        <label>Jam Minum</label>
+        <input type="time" id="rem-time" value="08:00" style="font-size:0.9rem;" />
+      </div>
+      <div id="rem-msg" style="font-size:0.78rem;margin-bottom:10px;"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <button id="rem-cancel-btn" class="btn" style="width:100%;">Batal</button>
+        <button id="rem-add-btn" class="btn btn-primary" style="width:100%;">Simpan</button>
+      </div>
+    </div>`;
 
   if (isDesktop) {
     container.innerHTML = `<div style="max-width:600px;margin:0 auto;">${innerHTML}</div>`;
@@ -214,11 +228,25 @@ export function render(container) {
   // Tambah dari rekomendasi
   container.querySelectorAll('.add-reco-btn').forEach(btn => {
     btn.addEventListener('click', () => {
+      _openSheet(container);
       container.querySelector('#rem-name').value = btn.dataset.name;
       container.querySelector('#rem-dose').value = btn.dataset.dose;
-      container.querySelector('#rem-name').scrollIntoView({ behavior: 'smooth' });
     });
   });
+
+  // Buka/tutup sheet
+  function _openSheet(c) {
+    c.querySelector('#rem-overlay').style.display = 'block';
+    c.querySelector('#rem-sheet').style.display = 'block';
+  }
+  function _closeSheet(c) {
+    c.querySelector('#rem-overlay').style.display = 'none';
+    c.querySelector('#rem-sheet').style.display = 'none';
+  }
+
+  container.querySelector('#open-add-sheet')?.addEventListener('click', () => _openSheet(container));
+  container.querySelector('#rem-overlay')?.addEventListener('click', () => _closeSheet(container));
+  container.querySelector('#rem-cancel-btn')?.addEventListener('click', () => _closeSheet(container));
 
   // Hapus pengingat
   container.querySelectorAll('.remove-btn').forEach(btn => {
