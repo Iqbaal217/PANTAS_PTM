@@ -143,19 +143,34 @@ export function render(container) {
   });
 
   const recoHTML = recommendations.length ? `
-    <div style="font-size:0.9rem;font-weight:700;color:var(--text);margin-bottom:6px;">💊 Rekomendasi Obat</div>
-    <div style="font-size:0.75rem;color:var(--text-3);margin-bottom:12px;">Berdasarkan riwayat penyakit Anda di rekam medis</div>
-    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;">
-      ${recommendations.map(r => `
-        <div style="background:var(--surface-2);border:1px solid var(--border);border-left:3px solid var(--blue);border-radius:var(--radius);padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px;">
-          <div>
-            <div style="font-size:0.82rem;font-weight:600;color:var(--text);">${r.name}</div>
-            <div style="font-size:0.72rem;color:var(--text-3);margin-top:2px;">${r.dose} · ${r.note}</div>
-            <span style="font-size:0.65rem;background:var(--blue-soft);color:var(--blue);padding:2px 7px;border-radius:var(--radius-full);margin-top:4px;display:inline-block;">${r.disease}</span>
-          </div>
-          <button class="btn btn-sm add-reco-btn" data-name="${r.name}" data-dose="${r.dose}" style="flex-shrink:0;background:var(--blue);color:white;border-radius:9px;font-size:0.7rem;padding:6px 10px;">+ Tambah</button>
-        </div>`).join('')}
-    </div>` : '';
+    <!-- Banner daftar obat yang perlu diminum -->
+    <div style="background:linear-gradient(135deg,#eff6ff,#dbeafe);border:1px solid rgba(37,99,235,0.2);border-radius:var(--radius-lg);padding:14px 16px;margin-bottom:20px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+        <span style="font-size:1.2rem;">💊</span>
+        <div>
+          <div style="font-size:0.88rem;font-weight:700;color:var(--blue);">Daftar Obat yang Perlu Diminum</div>
+          <div style="font-size:0.72rem;color:var(--text-3);margin-top:1px;">Berdasarkan penyakit PTM Anda di rekam medis</div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        ${recommendations.map(r => `
+          <div style="background:white;border:1px solid rgba(37,99,235,0.15);border-radius:var(--radius);padding:10px 12px;display:flex;align-items:center;justify-content:space-between;gap:10px;">
+            <div style="flex:1;min-width:0;">
+              <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+                <span style="font-size:0.82rem;font-weight:600;color:var(--text);">${r.name}</span>
+                <span style="font-size:0.62rem;background:var(--blue-soft);color:var(--blue);padding:2px 7px;border-radius:var(--radius-full);white-space:nowrap;">${r.disease}</span>
+              </div>
+              <div style="font-size:0.72rem;color:var(--text-3);margin-top:3px;">📋 ${r.dose} &nbsp;·&nbsp; ⏰ ${r.note}</div>
+            </div>
+            <button class="btn btn-sm add-reco-btn" data-name="${r.name}" data-dose="${r.dose}" style="flex-shrink:0;background:var(--blue);color:white;border-radius:9px;font-size:0.7rem;padding:6px 10px;white-space:nowrap;">+ Set Pengingat</button>
+          </div>`).join('')}
+      </div>
+    </div>` : `
+    <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px 16px;margin-bottom:20px;text-align:center;">
+      <div style="font-size:1.5rem;margin-bottom:6px;">💊</div>
+      <div style="font-size:0.82rem;font-weight:600;color:var(--text-2);margin-bottom:4px;">Belum ada rekomendasi obat</div>
+      <div style="font-size:0.75rem;color:var(--text-3);">Lengkapi rekam medis Anda untuk mendapatkan rekomendasi obat sesuai penyakit PTM</div>
+    </div>`;
 
   const activeReminders = getActiveReminders();
   const remindersHTML = activeReminders.length ? `

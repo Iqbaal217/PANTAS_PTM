@@ -171,15 +171,13 @@ export function render(container) {
         <label>Spesialisasi</label>
         <input type="text" id="con-spec" placeholder="Contoh: Kardiolog" />
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-        <div class="form-group">
-          <label>Tanggal</label>
-          <input type="date" id="con-date" min="${today}" />
-        </div>
-        <div class="form-group">
-          <label>Jam</label>
-          <input type="time" id="con-time" value="09:00" />
-        </div>
+      <div class="form-group">
+        <label>Tanggal</label>
+        <input type="date" id="con-date" min="${today}" />
+      </div>
+      <div class="form-group">
+        <label>Jam</label>
+        <input type="time" id="con-time" value="09:00" />
       </div>
       <div class="form-group">
         <label>Metode</label>
