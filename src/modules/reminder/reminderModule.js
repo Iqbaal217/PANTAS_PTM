@@ -29,7 +29,7 @@ const DRUG_RECOMMENDATIONS = {
     { name: 'Furosemide 40mg', dose: '1x sehari', note: 'Diminum pagi hari untuk menghindari buang air kecil di malam hari. Obat ini membantu mengeluarkan kelebihan cairan dari tubuh.' },
   ],
   obesity: [
-    { name: 'Vitamin D3 1000IU', dose: '1x sehari', note: 'Diminum bersama makanan berlemak sehat (seperti alpukat atau kacang) agar penyerapan optimal. Defisiensi Vitamin D umum terjadi pada obesitas.' },
+    { name: 'Vitamin D3 1000IU', dose: '1x sehari', note: 'Diminum setelah makan pagi. Penyerapan Vitamin D lebih optimal jika dikonsumsi setelah makan karena membutuhkan lemak untuk diserap tubuh.' },
   ],
 };
 
